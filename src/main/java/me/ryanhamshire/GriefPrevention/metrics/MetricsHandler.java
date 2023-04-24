@@ -1,6 +1,6 @@
 package me.ryanhamshire.GriefPrevention.metrics;
 
-import me.ryanhamshire.GriefPrevention.ClaimsMode;
+import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.World;
 

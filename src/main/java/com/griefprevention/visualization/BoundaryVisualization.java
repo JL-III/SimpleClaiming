@@ -1,9 +1,9 @@
 package com.griefprevention.visualization;
 
-import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.CustomLogEntryTypes;
+import me.ryanhamshire.GriefPrevention.claim.Claim;
+import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.PlayerData;
+import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import com.griefprevention.events.BoundaryVisualizationEvent;
 import com.griefprevention.util.IntVector;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;

@@ -20,11 +20,42 @@ package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
-import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
+import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
+import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;
+import me.ryanhamshire.GriefPrevention.listeners.EntityEventHandler;
+import me.ryanhamshire.GriefPrevention.tasks.EntityCleanupTask;
+import me.ryanhamshire.GriefPrevention.util.BlockSnapshot;
+import me.ryanhamshire.GriefPrevention.util.DataStore;
+import me.ryanhamshire.GriefPrevention.util.DataStore.NoTransferException;
+import me.ryanhamshire.GriefPrevention.claim.Claim;
+import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
+import me.ryanhamshire.GriefPrevention.claim.CreateClaimResult;
+import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
+import me.ryanhamshire.GriefPrevention.enums.PistonMode;
+import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
+import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
+import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
 import me.ryanhamshire.GriefPrevention.metrics.MetricsHandler;
+import me.ryanhamshire.GriefPrevention.tasks.AutoExtendClaimTask;
+import me.ryanhamshire.GriefPrevention.tasks.CheckForPortalTrapTask;
+import me.ryanhamshire.GriefPrevention.tasks.DeliverClaimBlocksTask;
+import me.ryanhamshire.GriefPrevention.tasks.FindUnusedClaimsTask;
+import me.ryanhamshire.GriefPrevention.tasks.PlayerRescueTask;
+import me.ryanhamshire.GriefPrevention.tasks.PvPImmunityValidationTask;
+import me.ryanhamshire.GriefPrevention.tasks.RestoreNatureProcessingTask;
+import me.ryanhamshire.GriefPrevention.tasks.SendPlayerMessageTask;
+import me.ryanhamshire.GriefPrevention.tasks.WelcomeTask;
+import me.ryanhamshire.GriefPrevention.util.CustomLogger;
+import me.ryanhamshire.GriefPrevention.util.DatabaseDataStore;
+import me.ryanhamshire.GriefPrevention.util.FlatFileDataStore;
+import me.ryanhamshire.GriefPrevention.util.IgnoreLoaderThread;
+import me.ryanhamshire.GriefPrevention.util.PendingItemProtection;
+import me.ryanhamshire.GriefPrevention.util.PlayerData;
+import me.ryanhamshire.GriefPrevention.util.TextMode;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.BanList;
 import org.bukkit.BanList.Type;
@@ -286,25 +317,19 @@ public class GriefPrevention extends JavaPlugin
         AddLogEntry("Finished loading configuration.");
 
         //when datastore initializes, it loads player and claim data, and posts some stats to the log
-        if (this.databaseUrl.length() > 0)
-        {
-            try
-            {
+        if (this.databaseUrl.length() > 0) {
+            try {
                 DatabaseDataStore databaseStore = new DatabaseDataStore(this.databaseUrl, this.databaseUserName, this.databasePassword);
-
-                if (FlatFileDataStore.hasData())
-                {
+                if (FlatFileDataStore.hasData()) {
                     GriefPrevention.AddLogEntry("There appears to be some data on the hard drive.  Migrating those data to the database...");
                     FlatFileDataStore flatFileStore = new FlatFileDataStore();
                     this.dataStore = flatFileStore;
                     flatFileStore.migrateData(databaseStore);
                     GriefPrevention.AddLogEntry("Data migration process complete.");
                 }
-
                 this.dataStore = databaseStore;
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 GriefPrevention.AddLogEntry("Because there was a problem with the database, GriefPrevention will not function properly.  Either update the database config settings resolve the issue, or delete those lines from your config.yml so that GriefPrevention can use the file system to store data.");
                 e.printStackTrace();
                 this.getServer().getPluginManager().disablePlugin(this);
@@ -328,12 +353,10 @@ public class GriefPrevention extends JavaPlugin
                     oldplayerdata.renameTo(playerdata);
                 }
             }
-            try
-            {
+            try {
                 this.dataStore = new FlatFileDataStore();
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 GriefPrevention.AddLogEntry("Unable to initialize the file system data store.  Details:");
                 GriefPrevention.AddLogEntry(e.getMessage());
                 e.printStackTrace();
@@ -375,8 +398,8 @@ public class GriefPrevention extends JavaPlugin
         pluginManager.registerEvents(entityEventHandler, this);
 
         //siege events
-        SiegeEventHandler siegeEventHandler = new SiegeEventHandler();
-        pluginManager.registerEvents(siegeEventHandler, this);
+//        SiegeEventHandler siegeEventHandler = new SiegeEventHandler();
+//        pluginManager.registerEvents(siegeEventHandler, this);
 
         //vault-based economy integration
         economyHandler = new EconomyHandler(this);
@@ -704,41 +727,41 @@ public class GriefPrevention extends JavaPlugin
             }
         }
 
-        //default siege blocks
-        this.config_siege_blocks = EnumSet.noneOf(Material.class);
-        this.config_siege_blocks.add(Material.DIRT);
-        this.config_siege_blocks.add(Material.GRASS_BLOCK);
-        this.config_siege_blocks.add(Material.GRASS);
-        this.config_siege_blocks.add(Material.FERN);
-        this.config_siege_blocks.add(Material.DEAD_BUSH);
-        this.config_siege_blocks.add(Material.COBBLESTONE);
-        this.config_siege_blocks.add(Material.GRAVEL);
-        this.config_siege_blocks.add(Material.SAND);
-        this.config_siege_blocks.add(Material.GLASS);
-        this.config_siege_blocks.add(Material.GLASS_PANE);
-        this.config_siege_blocks.add(Material.OAK_PLANKS);
-        this.config_siege_blocks.add(Material.SPRUCE_PLANKS);
-        this.config_siege_blocks.add(Material.BIRCH_PLANKS);
-        this.config_siege_blocks.add(Material.JUNGLE_PLANKS);
-        this.config_siege_blocks.add(Material.ACACIA_PLANKS);
-        this.config_siege_blocks.add(Material.DARK_OAK_PLANKS);
-        this.config_siege_blocks.add(Material.WHITE_WOOL);
-        this.config_siege_blocks.add(Material.ORANGE_WOOL);
-        this.config_siege_blocks.add(Material.MAGENTA_WOOL);
-        this.config_siege_blocks.add(Material.LIGHT_BLUE_WOOL);
-        this.config_siege_blocks.add(Material.YELLOW_WOOL);
-        this.config_siege_blocks.add(Material.LIME_WOOL);
-        this.config_siege_blocks.add(Material.PINK_WOOL);
-        this.config_siege_blocks.add(Material.GRAY_WOOL);
-        this.config_siege_blocks.add(Material.LIGHT_GRAY_WOOL);
-        this.config_siege_blocks.add(Material.CYAN_WOOL);
-        this.config_siege_blocks.add(Material.PURPLE_WOOL);
-        this.config_siege_blocks.add(Material.BLUE_WOOL);
-        this.config_siege_blocks.add(Material.BROWN_WOOL);
-        this.config_siege_blocks.add(Material.GREEN_WOOL);
-        this.config_siege_blocks.add(Material.RED_WOOL);
-        this.config_siege_blocks.add(Material.BLACK_WOOL);
-        this.config_siege_blocks.add(Material.SNOW);
+//        //default siege blocks
+//        this.config_siege_blocks = EnumSet.noneOf(Material.class);
+//        this.config_siege_blocks.add(Material.DIRT);
+//        this.config_siege_blocks.add(Material.GRASS_BLOCK);
+//        this.config_siege_blocks.add(Material.GRASS);
+//        this.config_siege_blocks.add(Material.FERN);
+//        this.config_siege_blocks.add(Material.DEAD_BUSH);
+//        this.config_siege_blocks.add(Material.COBBLESTONE);
+//        this.config_siege_blocks.add(Material.GRAVEL);
+//        this.config_siege_blocks.add(Material.SAND);
+//        this.config_siege_blocks.add(Material.GLASS);
+//        this.config_siege_blocks.add(Material.GLASS_PANE);
+//        this.config_siege_blocks.add(Material.OAK_PLANKS);
+//        this.config_siege_blocks.add(Material.SPRUCE_PLANKS);
+//        this.config_siege_blocks.add(Material.BIRCH_PLANKS);
+//        this.config_siege_blocks.add(Material.JUNGLE_PLANKS);
+//        this.config_siege_blocks.add(Material.ACACIA_PLANKS);
+//        this.config_siege_blocks.add(Material.DARK_OAK_PLANKS);
+//        this.config_siege_blocks.add(Material.WHITE_WOOL);
+//        this.config_siege_blocks.add(Material.ORANGE_WOOL);
+//        this.config_siege_blocks.add(Material.MAGENTA_WOOL);
+//        this.config_siege_blocks.add(Material.LIGHT_BLUE_WOOL);
+//        this.config_siege_blocks.add(Material.YELLOW_WOOL);
+//        this.config_siege_blocks.add(Material.LIME_WOOL);
+//        this.config_siege_blocks.add(Material.PINK_WOOL);
+//        this.config_siege_blocks.add(Material.GRAY_WOOL);
+//        this.config_siege_blocks.add(Material.LIGHT_GRAY_WOOL);
+//        this.config_siege_blocks.add(Material.CYAN_WOOL);
+//        this.config_siege_blocks.add(Material.PURPLE_WOOL);
+//        this.config_siege_blocks.add(Material.BLUE_WOOL);
+//        this.config_siege_blocks.add(Material.BROWN_WOOL);
+//        this.config_siege_blocks.add(Material.GREEN_WOOL);
+//        this.config_siege_blocks.add(Material.RED_WOOL);
+//        this.config_siege_blocks.add(Material.BLACK_WOOL);
+//        this.config_siege_blocks.add(Material.SNOW);
 
         List<String> breakableBlocksList;
 
@@ -1112,8 +1135,7 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
 
                 //link to a video demo of land claiming, based on world type
-                if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
-                {
+                if (GriefPrevention.instance.creativeRulesApply(player.getLocation())) {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
                 else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
@@ -3680,7 +3702,7 @@ public class GriefPrevention extends JavaPlugin
         return true;
     }
 
-    static void banPlayer(Player player, String reason, String source)
+    public static void banPlayer(Player player, String reason, String source)
     {
         if (GriefPrevention.instance.config_ban_useCommand)
         {

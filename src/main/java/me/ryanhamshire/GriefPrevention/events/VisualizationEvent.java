@@ -1,8 +1,7 @@
 package me.ryanhamshire.GriefPrevention.events;
 
 import com.griefprevention.events.BoundaryVisualizationEvent;
-import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.Visualization;
+import me.ryanhamshire.GriefPrevention.claim.Claim;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
