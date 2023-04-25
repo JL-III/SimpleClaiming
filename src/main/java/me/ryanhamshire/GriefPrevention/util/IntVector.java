@@ -12,9 +12,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An immutable integer-based vector.
  */
-public record IntVector(int x, int y, int z)
-{
-
+public record IntVector(int x, int y, int z) {
     /**
      * Construct a new {@code IntVector} representing the specified {@link Block}.
      *
@@ -30,8 +28,7 @@ public record IntVector(int x, int y, int z)
      *
      * @param location the {@code Location}
      */
-    public IntVector(@NotNull Location location)
-    {
+    public IntVector(@NotNull Location location) {
         this(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
@@ -100,8 +97,7 @@ public record IntVector(int x, int y, int z)
      * @return the {@code IntVector} created
      */
     @Contract("_ -> new")
-    public @NotNull IntVector add(@NotNull IntVector other)
-    {
+    public @NotNull IntVector add(@NotNull IntVector other) {
         return new IntVector(x() + other.x(), y() + other.y(), z() + other.z());
     }
 
@@ -112,11 +108,9 @@ public record IntVector(int x, int y, int z)
      * @param world the {@link World}
      * @return true if the block is loaded
      */
-    public boolean isChunkLoaded(@NotNull World world)
-    {
+    public boolean isChunkLoaded(@NotNull World world) {
         // Note: Location#getChunk et cetera load the chunk!
         // Only World#isChunkLoaded is safe without a Chunk object.
         return world.isChunkLoaded(x() >> 4, z() >> 4);
     }
-
 }

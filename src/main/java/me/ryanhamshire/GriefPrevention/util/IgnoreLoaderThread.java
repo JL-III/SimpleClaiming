@@ -11,13 +11,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 //loads ignore data from file into a hash map
-public class IgnoreLoaderThread extends Thread
-{
+public class IgnoreLoaderThread extends Thread {
     private final UUID playerToLoad;
     private final ConcurrentHashMap<UUID, Boolean> destinationMap;
 
-    public IgnoreLoaderThread(UUID playerToLoad, ConcurrentHashMap<UUID, Boolean> destinationMap)
-    {
+    public IgnoreLoaderThread(UUID playerToLoad, ConcurrentHashMap<UUID, Boolean> destinationMap) {
         this.playerToLoad = playerToLoad;
         this.destinationMap = destinationMap;
         this.setPriority(MIN_PRIORITY);
@@ -43,13 +41,11 @@ public class IgnoreLoaderThread extends Thread
                 //each line is one ignore.  asterisks indicate administrative ignores
                 for (String line : lines) {
                     boolean adminIgnore = false;
-                    if (line.startsWith("*"))
-                    {
+                    if (line.startsWith("*")) {
                         adminIgnore = true;
                         line = line.substring(1);
                     }
-                    try
-                    {
+                    try {
                         UUID ignoredUUID = UUID.fromString(line);
                         this.destinationMap.put(ignoredUUID, adminIgnore);
                     }
@@ -58,15 +54,13 @@ public class IgnoreLoaderThread extends Thread
             }
 
             //if there's any problem with the file's content, retry up to 5 times with 5 milliseconds between
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 latestException = e;
                 needRetry = true;
                 retriesRemaining--;
             }
 
-            try
-            {
+            try {
                 if (needRetry) Thread.sleep(5);
             }
             catch (InterruptedException exception) {}
@@ -74,8 +68,7 @@ public class IgnoreLoaderThread extends Thread
         } while (needRetry && retriesRemaining >= 0);
 
         //if last attempt failed, log information about the problem
-        if (needRetry)
-        {
+        if (needRetry) {
             GriefPrevention.AddLogEntry("Retry attempts exhausted.  Unable to load ignore data for player \"" + playerToLoad.toString() + "\": " + latestException.toString());
             latestException.printStackTrace();
         }
