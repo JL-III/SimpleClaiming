@@ -4,6 +4,7 @@ import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
+import me.ryanhamshire.GriefPrevention.util.Messages;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,8 +26,8 @@ public class WelcomeTask implements Runnable {
         if (!this.player.isOnline()) return;
 
         //offer advice and a helpful link
-        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.AvoidGriefClaimLand);
-        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+        Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.AvoidGriefClaimLand);
+        Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
 
         //give the player a reference book for later
         if (GriefPrevention.instance.config_claims_supplyPlayerManual) {

@@ -19,6 +19,7 @@
 package me.ryanhamshire.GriefPrevention.tasks;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import me.ryanhamshire.GriefPrevention.util.Messages;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -50,7 +51,7 @@ public class SendPlayerMessageTask implements Runnable {
         }
         //otherwise send it immediately
         else {
-            GriefPrevention.sendMessage(this.player, this.color, this.message);
+            Messages.sendMessage(this.player, this.color, this.message);
         }
     }
 }

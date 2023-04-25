@@ -19,16 +19,13 @@
 package me.ryanhamshire.GriefPrevention.listeners;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.util.Messages;
-import me.ryanhamshire.GriefPrevention.util.PendingItemProtection;
+import me.ryanhamshire.GriefPrevention.util.*;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
 import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.events.PreventPvPEvent;
 import me.ryanhamshire.GriefPrevention.events.ProtectDeathDropsEvent;
-import me.ryanhamshire.GriefPrevention.util.DataStore;
-import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -1118,7 +1115,7 @@ public class EntityEventHandler implements Listener
                             if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
                             {
                                 //TODO look at this implementation as it cannot be made public apparently
-                                String ownerName = GriefPrevention.lookupPlayerName(owner);
+                                String ownerName = PlayerName.lookupPlayerName(owner);
                                 String message = GriefPrevention.instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, ownerName);
                                 if (attacker.hasPermission("griefprevention.ignoreclaims"))
                                     message += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
@@ -1148,7 +1145,7 @@ public class EntityEventHandler implements Listener
                                     if (tameable.getTarget() == attacker) return;
                                 }
                                 event.setCancelled(true);
-                                String ownerName = GriefPrevention.lookupPlayerName(owner);
+                                String ownerName = PlayerName.lookupPlayerName(owner);
                                 String message = GriefPrevention.instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, ownerName);
                                 if (attacker.hasPermission("griefprevention.ignoreclaims"))
                                     message += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);

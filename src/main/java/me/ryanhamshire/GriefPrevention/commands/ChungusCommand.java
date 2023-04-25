@@ -14,6 +14,7 @@ import me.ryanhamshire.GriefPrevention.tasks.AutoExtendClaimTask;
 import me.ryanhamshire.GriefPrevention.tasks.PlayerRescueTask;
 import me.ryanhamshire.GriefPrevention.tasks.WelcomeTask;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
+import me.ryanhamshire.GriefPrevention.util.Messages;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
@@ -47,7 +48,7 @@ public class ChungusCommand implements CommandExecutor {
         {
             if (!GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ClaimsDisabledWorld);
+                Messages.sendMessage(player, TextMode.Err, MessageType.ClaimsDisabledWorld);
                 return true;
             }
 

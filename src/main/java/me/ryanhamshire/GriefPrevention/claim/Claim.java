@@ -25,6 +25,7 @@ import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import me.ryanhamshire.GriefPrevention.events.ClaimPermissionCheckEvent;
+import me.ryanhamshire.GriefPrevention.util.PlayerName;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -762,7 +763,7 @@ public class Claim
         if (this.ownerID == null)
             return GriefPrevention.instance.dataStore.getMessage(MessageType.OwnerNameForAdminClaims);
 
-        return GriefPrevention.lookupPlayerName(this.ownerID);
+        return PlayerName.lookupPlayerName(this.ownerID);
     }
 
     public UUID getOwnerID()

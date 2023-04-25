@@ -1025,7 +1025,7 @@ public class GriefPrevention extends JavaPlugin
         }
         else
         {
-            return GriefPrevention.lookupPlayerName(entry);
+            return PlayerName.lookupPlayerName(entry);
         }
     }
 
@@ -1112,7 +1112,7 @@ public class GriefPrevention extends JavaPlugin
         }
         else
         {
-            otherPlayer = this.resolvePlayerByName(recipientName);
+            otherPlayer = PlayerName.resolvePlayerByName(recipientName);
             boolean isPermissionFormat = recipientName.contains(".");
             if (otherPlayer == null && !recipientName.equals("public") && !recipientName.equals("all") && !isPermissionFormat)
             {
@@ -1259,7 +1259,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //helper method to resolve a player by name
-    ConcurrentHashMap<String, UUID> playerNameToIDMap = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, UUID> playerNameToIDMap = new ConcurrentHashMap<>();
 
     //thread to build the above cache
     private class CacheOfflinePlayerNamesThread extends Thread
@@ -1302,77 +1302,6 @@ public class GriefPrevention extends JavaPlugin
                 }
             }
         }
-    }
-
-
-    public OfflinePlayer resolvePlayerByName(String name)
-    {
-        //try online players first
-        Player targetPlayer = this.getServer().getPlayerExact(name);
-        if (targetPlayer != null) return targetPlayer;
-
-        UUID bestMatchID = null;
-
-        //try exact match first
-        bestMatchID = this.playerNameToIDMap.get(name);
-
-        //if failed, try ignore case
-        if (bestMatchID == null)
-        {
-            bestMatchID = this.playerNameToIDMap.get(name.toLowerCase());
-        }
-        if (bestMatchID == null)
-        {
-            return null;
-        }
-
-        return this.getServer().getOfflinePlayer(bestMatchID);
-    }
-
-    //helper method to resolve a player name from the player's UUID
-    static @NotNull String lookupPlayerName(@Nullable UUID playerID) {
-        //parameter validation
-        if (playerID == null) return "someone";
-        //check the cache
-        OfflinePlayer player = GriefPrevention.instance.getServer().getOfflinePlayer(playerID);
-        return lookupPlayerName(player);
-    }
-
-    static @NotNull String lookupPlayerName(@NotNull AnimalTamer tamer) {
-        // If the tamer is not a player or has played, prefer their name if it exists.
-        if (!(tamer instanceof OfflinePlayer player) || player.hasPlayedBefore() || player.isOnline())
-        {
-            String name = tamer.getName();
-            if (name != null) return name;
-        }
-
-        // Fall back to tamer's UUID.
-        return "someone(" + tamer.getUniqueId() + ")";
-    }
-
-    //cache for player name lookups, to save searches of all offline players
-    public static void cacheUUIDNamePair(UUID playerID, String playerName)
-    {
-        //store the reverse mapping
-        GriefPrevention.instance.playerNameToIDMap.put(playerName, playerID);
-        GriefPrevention.instance.playerNameToIDMap.put(playerName.toLowerCase(), playerID);
-    }
-
-    //string overload for above helper
-    static String lookupPlayerName(String playerID)
-    {
-        UUID id;
-        try
-        {
-            id = UUID.fromString(playerID);
-        }
-        catch (IllegalArgumentException ex)
-        {
-            GriefPrevention.AddLogEntry("Error: Tried to look up a local player name for invalid UUID: " + playerID);
-            return "someone";
-        }
-
-        return lookupPlayerName(id);
     }
 
     public void onDisable()

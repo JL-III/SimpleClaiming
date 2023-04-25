@@ -779,7 +779,7 @@ public class PlayerEventHandler implements Listener
 //        }
 
         //in case player has changed his name, on successful login, update UUID > Name mapping
-        GriefPrevention.cacheUUIDNamePair(player.getUniqueId(), player.getName());
+        PlayerName.cacheUUIDNamePair(player.getUniqueId(), player.getName());
 
         //ensure we're not over the limit for this IP address
         InetAddress ipAddress = playerData.ipAddress;
@@ -1416,7 +1416,7 @@ public class PlayerEventHandler implements Listener
 
             //has that player unlocked his drops?
             OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
-            String ownerName = GriefPrevention.lookupPlayerName(ownerID);
+            String ownerName = PlayerName.lookupPlayerName(ownerID);
             if (owner.isOnline() && !player.equals(owner))
             {
                 PlayerData playerData = this.dataStore.getPlayerData(ownerID);

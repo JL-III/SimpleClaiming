@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention.tasks;
 
+import me.ryanhamshire.GriefPrevention.util.Messages;
 import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
@@ -56,19 +57,19 @@ public class EquipShovelProcessingTask implements Runnable {
         //always reset to basic claims mode
         if (playerData.shovelMode != ShovelMode.Basic) {
             playerData.shovelMode = ShovelMode.Basic;
-            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), MessageType.ShovelBasicClaimMode);
+            Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.ShovelBasicClaimMode);
         }
 
         //tell him how many claim blocks he has available
         int remainingBlocks = playerData.getRemainingClaimBlocks();
-        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.RemainingBlocks, String.valueOf(remainingBlocks));
+        Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.RemainingBlocks, String.valueOf(remainingBlocks));
 
         //link to a video demo of land claiming, based on world type
         if (GriefPrevention.instance.creativeRulesApply(player.getLocation())) {
-            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
         }
         else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld())) {
-            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
         }
 
         //if standing in a claim owned by the player, visualize it

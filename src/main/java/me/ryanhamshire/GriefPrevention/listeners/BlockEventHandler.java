@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention.listeners;
 
+import me.ryanhamshire.GriefPrevention.util.Messages;
 import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
@@ -130,7 +131,7 @@ public class BlockEventHandler implements Listener {
         //make sure the player is allowed to break at the location
         String noBuildReason = GriefPrevention.instance.allowBreak(player, block, block.getLocation(), breakEvent);
         if (noBuildReason != null) {
-            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
+            Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
             breakEvent.setCancelled(true);
             return;
         }
@@ -146,7 +147,7 @@ public class BlockEventHandler implements Listener {
 
         String noBuildReason = GriefPrevention.instance.allowBuild(player, sign.getLocation(), sign.getType());
         if (noBuildReason != null) {
-            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
+            Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
             event.setCancelled(true);
             return;
         }
@@ -208,7 +209,7 @@ public class BlockEventHandler implements Listener {
         for (BlockState block : placeEvent.getReplacedBlockStates()) {
             String noBuildReason = GriefPrevention.instance.allowBuild(player, block.getLocation(), block.getType());
             if (noBuildReason != null) {
-                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
+                Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
                 placeEvent.setCancelled(true);
                 return;
             }
@@ -243,7 +244,7 @@ public class BlockEventHandler implements Listener {
 
                 Location location = otherPlayer.getLocation();
                 if (!otherPlayer.equals(player) && location.distanceSquared(block.getLocation()) < 9 && player.canSee(otherPlayer)) {
-                    GriefPrevention.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerTooCloseForFire2);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerTooCloseForFire2);
                     placeEvent.setCancelled(true);
                     return;
                 }
@@ -267,11 +268,11 @@ public class BlockEventHandler implements Listener {
                         return;
 
                     placeEvent.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noContainerReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noContainerReason.get());
                     return;
                 }
             }
-            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
+            Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
             placeEvent.setCancelled(true);
             return;
         }
@@ -288,8 +289,8 @@ public class BlockEventHandler implements Listener {
 
             //warn about TNT not destroying claimed blocks
             if (block.getType() == Material.TNT && !claim.areExplosivesAllowed) {
-                GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoTNTDamageClaims);
-                GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.ClaimExplosivesAdvertisement);
+                Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoTNTDamageClaims);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.ClaimExplosivesAdvertisement);
             }
 
             //if the player has permission for the claim and he's placing UNDER the claim
@@ -308,7 +309,7 @@ public class BlockEventHandler implements Listener {
         else if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius > -1 && player.hasPermission("griefprevention.createclaims") && block.getType() == Material.CHEST) {
             //if the chest is too deep underground, don't create the claim and explain why
             if (GriefPrevention.instance.config_claims_preventTheft && block.getY() < GriefPrevention.instance.config_claims_maxDepth) {
-                GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.TooDeepToClaim);
+                Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.TooDeepToClaim);
                 return;
             }
             int radius = GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius;
@@ -317,13 +318,13 @@ public class BlockEventHandler implements Listener {
                 //radius == 0 means protect ONLY the chest
                 if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius == 0) {
                     this.dataStore.createClaim(block.getWorld(), block.getX(), block.getX(), block.getY(), block.getY(), block.getZ(), block.getZ(), player.getUniqueId(), null, null, player);
-                    GriefPrevention.sendMessage(player, TextMode.Success.getColor(), MessageType.ChestClaimConfirmation);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.ChestClaimConfirmation);
                 }
                 //otherwise, create a claim in the area around the chest
                 else {
                     //if failure due to insufficient claim blocks available
                     if (playerData.getRemainingClaimBlocks() < Math.pow(1 + 2 * GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadiusMin, 2)) {
-                        GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoEnoughBlocksForChestClaim);
+                        Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoEnoughBlocksForChestClaim);
                         return;
                     }
                     //as long as the automatic claim overlaps another existing claim, shrink it
@@ -350,23 +351,23 @@ public class BlockEventHandler implements Listener {
                     if (result != null && result.claim != null) {
                         if (result.succeeded) {
                             //notify and explain to player
-                            GriefPrevention.sendMessage(player, TextMode.Success.getColor(), MessageType.AutomaticClaimNotification);
+                            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AutomaticClaimNotification);
                             //show the player the protected area
                             BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, block);
                         }
                         else {
                             //notify and explain to player
-                            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), MessageType.AutomaticClaimOtherClaimTooClose);
+                            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.AutomaticClaimOtherClaimTooClose);
                             //show the player the protected area
                             BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, block);
                         }
                     }
                 }
-                GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
             }
             //check to see if this chest is in a claim, and warn when it isn't
             if (GriefPrevention.instance.config_claims_preventTheft && this.dataStore.getClaimAt(block.getLocation(), false, playerData.lastClaim) == null) {
-                GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.UnprotectedChestWarning);
+                Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.UnprotectedChestWarning);
             }
         }
 
@@ -389,14 +390,14 @@ public class BlockEventHandler implements Listener {
                 Long now = null;
                 //10 minute cooldown
                 if (playerData.buildWarningTimestamp == null || (now = System.currentTimeMillis()) - playerData.buildWarningTimestamp > 600000) {
-                    GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.BuildingOutsideClaims);
+                    Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.BuildingOutsideClaims);
                     playerData.warnedAboutBuildingOutsideClaims = true;
 
                     if (now == null) now = System.currentTimeMillis();
                     playerData.buildWarningTimestamp = now;
 
                     if (playerData.getClaims().size() < 2) {
-                        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+                        Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
                     }
 
                     if (playerData.lastClaim != null) {
@@ -411,21 +412,21 @@ public class BlockEventHandler implements Listener {
                 block.getWorld().getEnvironment() != Environment.NETHER &&
                 block.getY() > GriefPrevention.instance.getSeaLevel(block.getWorld()) - 5 &&
                 claim == null) {
-            GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoTNTDamageAboveSeaLevel);
+            Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoTNTDamageAboveSeaLevel);
         }
 
         //warn players about disabled pistons outside of land claims
         if (GriefPrevention.instance.config_pistonMovement == PistonMode.CLAIMS_ONLY &&
                 (block.getType() == Material.PISTON || block.getType() == Material.STICKY_PISTON) &&
                 claim == null) {
-            GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoPistonsOutsideClaims);
+            Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.NoPistonsOutsideClaims);
         }
 
         //limit active blocks in creative mode worlds
         if (!player.hasPermission("griefprevention.adminclaims") && GriefPrevention.instance.creativeRulesApply(block.getLocation()) && isActiveBlock(block)) {
             String noPlaceReason = claim.allowMoreActiveBlocks();
             if (noPlaceReason != null) {
-                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noPlaceReason);
+                Messages.sendMessage(player, TextMode.Err.getColor(), noPlaceReason);
                 placeEvent.setCancelled(true);
                 return;
             }
@@ -842,7 +843,7 @@ public class BlockEventHandler implements Listener {
 
         if (allowContainer != null) {
             event.setCancelled(true);
-            GriefPrevention.sendMessage(shooter, TextMode.Err.getColor(), allowContainer.get());
+            Messages.sendMessage(shooter, TextMode.Err.getColor(), allowContainer.get());
             return;
         }
     }
@@ -980,7 +981,7 @@ public class BlockEventHandler implements Listener {
 
                     if (noPortalReason != null) {
                         event.setCancelled(true);
-                        GriefPrevention.sendMessage(player, TextMode.Err.getColor(), noPortalReason.get());
+                        Messages.sendMessage(player, TextMode.Err.getColor(), noPortalReason.get());
                         return;
                     }
                 }
