@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class WordFinder {
+public class WordFinder {
     private Pattern pattern;
 
-    WordFinder(List<String> wordsToFind) {
+    public WordFinder(List<String> wordsToFind) {
         if (wordsToFind.size() == 0) return;
 
         StringBuilder patternBuilder = new StringBuilder();
@@ -29,7 +29,7 @@ class WordFinder {
         this.pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     }
 
-    boolean hasMatch(String input)
+    public boolean hasMatch(String input)
     {
         if (this.pattern == null) return false;
 

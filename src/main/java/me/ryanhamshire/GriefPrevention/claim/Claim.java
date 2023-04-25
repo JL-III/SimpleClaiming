@@ -23,7 +23,6 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
-import me.ryanhamshire.GriefPrevention.tasks.RestoreNatureProcessingTask;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import me.ryanhamshire.GriefPrevention.events.ClaimPermissionCheckEvent;
 import org.bukkit.Bukkit;
@@ -103,7 +102,7 @@ public class Claim
     public ArrayList<Claim> children = new ArrayList<>();
 
     //information about a siege involving this claim.  null means no siege is impacting this claim
-    public SiegeData siegeData = null;
+//    public SiegeData siegeData = null;
 
     //following a siege, buttons/levers are unlocked temporarily.  this represents that state
     public boolean doorsOpen = false;
@@ -220,7 +219,7 @@ public class Claim
     }
 
     //main constructor.  note that only creating a claim instance does nothing - a claim must be added to the data store to be effective
-    Claim(Location lesserBoundaryCorner, Location greaterBoundaryCorner, UUID ownerID, List<String> builderIDs, List<String> containerIDs, List<String> accessorIDs, List<String> managerIDs, boolean inheritNothing, Long id)
+    public Claim(Location lesserBoundaryCorner, Location greaterBoundaryCorner, UUID ownerID, List<String> builderIDs, List<String> containerIDs, List<String> accessorIDs, List<String> managerIDs, boolean inheritNothing, Long id)
     {
         //modification date
         this.modifiedDate = Calendar.getInstance().getTime();
@@ -281,7 +280,7 @@ public class Claim
         this.parent = claim.parent;
         this.inheritNothing = claim.inheritNothing;
         this.children = new ArrayList<>(claim.children);
-        this.siegeData = claim.siegeData;
+//        this.siegeData = claim.siegeData;
         this.doorsOpen = claim.doorsOpen;
     }
 
@@ -465,7 +464,8 @@ public class Claim
      * @param denialOverride a message overriding the default denial for clarity
      * @return the denial message or null if permission is granted
      */
-    @Nullable Supplier<String> checkPermission(
+    @Nullable
+    public Supplier<String> checkPermission(
             @NotNull Player player,
             @NotNull ClaimPermission permission,
             @Nullable Event event,
@@ -924,62 +924,61 @@ public class Claim
     }
 
 
-    long getPlayerInvestmentScore()
-    {
-        //decide which blocks will be considered player placed
-        Location lesserBoundaryCorner = this.getLesserBoundaryCorner();
-        Set<Material> playerBlocks = RestoreNatureProcessingTask.getPlayerBlocks(lesserBoundaryCorner.getWorld().getEnvironment(), lesserBoundaryCorner.getBlock().getBiome());
-
-        //scan the claim for player placed blocks
-        double score = 0;
-
-        boolean creativeMode = GriefPrevention.instance.creativeRulesApply(lesserBoundaryCorner);
-
-        for (int x = this.lesserBoundaryCorner.getBlockX(); x <= this.greaterBoundaryCorner.getBlockX(); x++)
-        {
-            for (int z = this.lesserBoundaryCorner.getBlockZ(); z <= this.greaterBoundaryCorner.getBlockZ(); z++)
-            {
-                int y = this.lesserBoundaryCorner.getBlockY();
-                for (; y < GriefPrevention.instance.getSeaLevel(this.lesserBoundaryCorner.getWorld()) - 5; y++)
-                {
-                    Block block = this.lesserBoundaryCorner.getWorld().getBlockAt(x, y, z);
-                    if (playerBlocks.contains(block.getType()))
-                    {
-                        if (block.getType() == Material.CHEST && !creativeMode)
-                        {
-                            score += 10;
-                        }
-                        else
-                        {
-                            score += .5;
-                        }
-                    }
-                }
-
-                for (; y < this.lesserBoundaryCorner.getWorld().getMaxHeight(); y++)
-                {
-                    Block block = this.lesserBoundaryCorner.getWorld().getBlockAt(x, y, z);
-                    if (playerBlocks.contains(block.getType()))
-                    {
-                        if (block.getType() == Material.CHEST && !creativeMode)
-                        {
-                            score += 10;
-                        }
-                        else if (creativeMode && (block.getType() == Material.LAVA))
-                        {
-                            score -= 10;
-                        }
-                        else
-                        {
-                            score += 1;
-                        }
-                    }
-                }
-            }
-        }
-
-        return (long) score;
-    }
+//    public long getPlayerInvestmentScore() {
+//        //decide which blocks will be considered player placed
+//        Location lesserBoundaryCorner = this.getLesserBoundaryCorner();
+////        Set<Material> playerBlocks = RestoreNatureProcessingTask.getPlayerBlocks(lesserBoundaryCorner.getWorld().getEnvironment(), lesserBoundaryCorner.getBlock().getBiome());
+//
+//        //scan the claim for player placed blocks
+//        double score = 0;
+//
+//        boolean creativeMode = GriefPrevention.instance.creativeRulesApply(lesserBoundaryCorner);
+//
+//        for (int x = this.lesserBoundaryCorner.getBlockX(); x <= this.greaterBoundaryCorner.getBlockX(); x++)
+//        {
+//            for (int z = this.lesserBoundaryCorner.getBlockZ(); z <= this.greaterBoundaryCorner.getBlockZ(); z++)
+//            {
+//                int y = this.lesserBoundaryCorner.getBlockY();
+//                for (; y < GriefPrevention.instance.getSeaLevel(this.lesserBoundaryCorner.getWorld()) - 5; y++)
+//                {
+//                    Block block = this.lesserBoundaryCorner.getWorld().getBlockAt(x, y, z);
+//                    if (playerBlocks.contains(block.getType()))
+//                    {
+//                        if (block.getType() == Material.CHEST && !creativeMode)
+//                        {
+//                            score += 10;
+//                        }
+//                        else
+//                        {
+//                            score += .5;
+//                        }
+//                    }
+//                }
+//
+//                for (; y < this.lesserBoundaryCorner.getWorld().getMaxHeight(); y++)
+//                {
+//                    Block block = this.lesserBoundaryCorner.getWorld().getBlockAt(x, y, z);
+//                    if (playerBlocks.contains(block.getType()))
+//                    {
+//                        if (block.getType() == Material.CHEST && !creativeMode)
+//                        {
+//                            score += 10;
+//                        }
+//                        else if (creativeMode && (block.getType() == Material.LAVA))
+//                        {
+//                            score -= 10;
+//                        }
+//                        else
+//                        {
+//                            score += 1;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        return (long) score;
+//    }
 
     public ArrayList<Chunk> getChunks()
     {

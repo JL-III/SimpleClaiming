@@ -13,26 +13,21 @@ class ChatterData
     private final ConcurrentLinkedQueue<LengthTimestampPair> recentMessageLengths = new ConcurrentLinkedQueue<>();
     private int recentTotalLength = 0;
 
-    public void AddMessage(String message, long timestamp)
-    {
+    public void AddMessage(String message, long timestamp) {
         int length = message.length();
         this.recentMessageLengths.add(new LengthTimestampPair(length, timestamp));
         this.recentTotalLength += length;
-
         this.lastMessage = message;
         this.lastMessageTimestamp = timestamp;
     }
 
-    public int getTotalRecentLength(long timestamp)
-    {
+    public int getTotalRecentLength(long timestamp) {
         LengthTimestampPair oldestPair = this.recentMessageLengths.peek();
-        while (oldestPair != null && timestamp - oldestPair.timestamp > 10000)
-        {
+        while (oldestPair != null && timestamp - oldestPair.timestamp > 10000) {
             this.recentMessageLengths.poll();
             this.recentTotalLength -= oldestPair.length;
             oldestPair = this.recentMessageLengths.peek();
         }
-
         return this.recentTotalLength;
     }
 }

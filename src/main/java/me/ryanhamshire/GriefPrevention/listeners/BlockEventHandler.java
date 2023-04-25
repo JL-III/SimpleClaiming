@@ -28,7 +28,7 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.enums.PistonMode;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.PlayerEventHandler;
+import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
 import me.ryanhamshire.GriefPrevention.util.TextMode;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.ChatColor;
@@ -314,6 +314,7 @@ public class BlockEventHandler implements Listener
             playerData.lastClaim = claim;
 
             //warn about TNT not destroying claimed blocks
+            //TODO take a closer look at siege functionality here and remove
             if (block.getType() == Material.TNT && !claim.areExplosivesAllowed && playerData.siegeData == null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageClaims);
@@ -462,7 +463,7 @@ public class BlockEventHandler implements Listener
                 }
             }
         }
-
+        //TODO take a closer look at siege functionality here and remove
         //warn players when they place TNT above sea level, since it doesn't destroy blocks there
         if (GriefPrevention.instance.config_blockSurfaceOtherExplosions && block.getType() == Material.TNT &&
                 block.getWorld().getEnvironment() != Environment.NETHER &&
@@ -499,7 +500,7 @@ public class BlockEventHandler implements Listener
         return isActiveBlock(block.getType());
     }
 
-    static boolean isActiveBlock(BlockState state)
+    public static boolean isActiveBlock(BlockState state)
     {
         return isActiveBlock(state.getType());
     }

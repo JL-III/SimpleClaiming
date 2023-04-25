@@ -39,7 +39,6 @@ import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
 import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
-import me.ryanhamshire.GriefPrevention.metrics.MetricsHandler;
 import me.ryanhamshire.GriefPrevention.tasks.AutoExtendClaimTask;
 import me.ryanhamshire.GriefPrevention.tasks.CheckForPortalTrapTask;
 import me.ryanhamshire.GriefPrevention.tasks.DeliverClaimBlocksTask;
@@ -118,10 +117,10 @@ public class GriefPrevention extends JavaPlugin
     public DataStore dataStore;
 
     // Event handlers with common functionality
-    EntityEventHandler entityEventHandler;
+    public EntityEventHandler entityEventHandler;
 
     //this tracks item stacks expected to drop which will need protection
-    ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
+    public ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
 
     //log entry manager for GP's custom log files
     CustomLogger customLogger;
@@ -421,11 +420,11 @@ public class GriefPrevention extends JavaPlugin
 
         AddLogEntry("Boot finished.");
 
-        try
-        {
-            new MetricsHandler(this, dataMode);
-        }
-        catch (Throwable ignored) {}
+//        try
+//        {
+//            new MetricsHandler(this, dataMode);
+//        }
+//        catch (Throwable ignored) {}
     }
 
     private void loadConfig()
@@ -2530,11 +2529,11 @@ public class GriefPrevention extends JavaPlugin
             //can't start a siege when you're already involved in one
             Player attacker = player;
             PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
-            if (attackerData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadySieging);
-                return true;
-            }
+//            if (attackerData.siegeData != null)
+//            {
+//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadySieging);
+//                return true;
+//            }
 
             //can't start a siege when you're protected from pvp combat
             if (attackerData.pvpImmune)
@@ -2586,11 +2585,11 @@ public class GriefPrevention extends JavaPlugin
 
             //victim must not be under siege already
             PlayerData defenderData = this.dataStore.getPlayerData(defender.getUniqueId());
-            if (defenderData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadyUnderSiegePlayer);
-                return true;
-            }
+//            if (defenderData.siegeData != null)
+//            {
+//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadyUnderSiegePlayer);
+//                return true;
+//            }
 
             //victim must not be pvp immune
             if (defenderData.pvpImmune)
@@ -2616,11 +2615,11 @@ public class GriefPrevention extends JavaPlugin
             }
 
             //claim can't be under siege already
-            if (defenderClaim.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadyUnderSiegeArea);
-                return true;
-            }
+//            if (defenderClaim.siegeData != null)
+//            {
+//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadyUnderSiegeArea);
+//                return true;
+//            }
 
             //can't siege admin claims
             if (defenderClaim.isAdminClaim())
@@ -2629,15 +2628,15 @@ public class GriefPrevention extends JavaPlugin
                 return true;
             }
 
-            //can't be on cooldown
-            if (dataStore.onCooldown(attacker, defender, defenderClaim))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeOnCooldown);
-                return true;
-            }
-
-            //start the siege
-            dataStore.startSiege(attacker, defender, defenderClaim);
+//            //can't be on cooldown
+//            if (dataStore.onCooldown(attacker, defender, defenderClaim))
+//            {
+//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeOnCooldown);
+//                return true;
+//            }
+//
+//            //start the siege
+//            dataStore.startSiege(attacker, defender, defenderClaim);
 
             //confirmation message for attacker, warning message for defender
             GriefPrevention.sendMessage(defender, TextMode.Warn, Messages.SiegeAlert, attacker.getName());
@@ -3242,7 +3241,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //cache for player name lookups, to save searches of all offline players
-    static void cacheUUIDNamePair(UUID playerID, String playerName)
+    public static void cacheUUIDNamePair(UUID playerID, String playerName)
     {
         //store the reverse mapping
         GriefPrevention.instance.playerNameToIDMap.put(playerName, playerID);
@@ -3317,7 +3316,7 @@ public class GriefPrevention extends JavaPlugin
         }
     }
 
-    static boolean isInventoryEmpty(Player player)
+    public static boolean isInventoryEmpty(Player player)
     {
         PlayerInventory inventory = player.getInventory();
         ItemStack[] armorStacks = inventory.getArmorContents();
@@ -3433,7 +3432,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //determines whether creative anti-grief rules apply at a location
-    boolean creativeRulesApply(Location location)
+    public boolean creativeRulesApply(Location location)
     {
         if (!this.config_creativeWorldsExist) return false;
 
@@ -3731,8 +3730,8 @@ public class GriefPrevention extends JavaPlugin
 
     public boolean claimIsPvPSafeZone(Claim claim)
     {
-        if (claim.siegeData != null)
-            return false;
+//        if (claim.siegeData != null)
+//            return false;
         return claim.isAdminClaim() && claim.parent == null && GriefPrevention.instance.config_pvp_noCombatInAdminLandClaims ||
                 claim.isAdminClaim() && claim.parent != null && GriefPrevention.instance.config_pvp_noCombatInAdminSubdivisions ||
                 !claim.isAdminClaim() && GriefPrevention.instance.config_pvp_noCombatInPlayerLandClaims;
@@ -3795,7 +3794,7 @@ public class GriefPrevention extends JavaPlugin
 	*/
 
     //Track scheduled "rescues" so we can cancel them if the player happens to teleport elsewhere so we can cancel it.
-    ConcurrentHashMap<UUID, BukkitTask> portalReturnTaskMap = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<UUID, BukkitTask> portalReturnTaskMap = new ConcurrentHashMap<>();
 
     public void startRescueTask(Player player, Location location)
     {

@@ -34,7 +34,7 @@ import org.bukkit.inventory.EquipmentSlot;
 //tells a player about how many claim blocks he has, etc
 //implemented as a task so that it can be delayed
 //otherwise, it's spammy when players mouse-wheel past the shovel in their hot bars
-class EquipShovelProcessingTask implements Runnable
+public class EquipShovelProcessingTask implements Runnable
 {
     //player data
     private final Player player;

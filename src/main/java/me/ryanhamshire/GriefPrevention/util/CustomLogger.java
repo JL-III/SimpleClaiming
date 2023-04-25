@@ -50,8 +50,7 @@ public class CustomLogger {
 
         //unless disabled, schedule recurring tasks
         int daysToKeepLogs = GriefPrevention.instance.config_logs_daysToKeep;
-        if (daysToKeepLogs > 0)
-        {
+        if (daysToKeepLogs > 0) {
             BukkitScheduler scheduler = GriefPrevention.instance.getServer().getScheduler();
             final long ticksPerSecond = 20L;
             final long ticksPerDay = ticksPerSecond * 60 * 60 * 24;
@@ -62,8 +61,7 @@ public class CustomLogger {
 
     private static final Pattern inlineFormatterPattern = Pattern.compile("§.");
 
-    public void AddEntry(String entry, CustomLogEntryTypes entryType)
-    {
+    public void AddEntry(String entry, CustomLogEntryTypes entryType) {
         //if disabled, do nothing
         int daysToKeepLogs = GriefPrevention.instance.config_logs_daysToKeep;
         if (daysToKeepLogs == 0) return;
@@ -78,8 +76,7 @@ public class CustomLogger {
         this.queuedEntries.append(timestamp).append(' ').append(entry).append('\n');
     }
 
-    private boolean isEnabledType(CustomLogEntryTypes entryType)
-    {
+    private boolean isEnabledType(CustomLogEntryTypes entryType) {
         if (entryType == CustomLogEntryTypes.Exception) return true;
         if (entryType == CustomLogEntryTypes.SocialActivity && !GriefPrevention.instance.config_logs_socialEnabled)
             return false;
@@ -94,10 +91,8 @@ public class CustomLogger {
         return true;
     }
 
-    void WriteEntries()
-    {
-        try
-        {
+    public void WriteEntries() {
+        try {
             //if nothing to write, stop here
             if (this.queuedEntries.length() == 0) return;
 
@@ -113,16 +108,13 @@ public class CustomLogger {
             //the unwritten entries will remain the buffer for the next write to retry
             this.queuedEntries.setLength(0);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void DeleteExpiredLogs()
-    {
-        try
-        {
+    private void DeleteExpiredLogs() {
+        try {
             //get list of log files
             File logFolder = new File(this.logFolderPath);
             File[] files = logFolder.listFiles();
@@ -131,43 +123,37 @@ public class CustomLogger {
             int daysToKeepLogs = GriefPrevention.instance.config_logs_daysToKeep;
             Calendar expirationBoundary = Calendar.getInstance();
             expirationBoundary.add(Calendar.DATE, -daysToKeepLogs);
-            for (File file : files)
-            {
+            for (File file : files) {
                 if (file.isDirectory()) continue;  //skip any folders
 
                 String filename = file.getName().replace(".log", "");
                 String[] dateParts = filename.split("_");  //format is yyyy_MM_dd
                 if (dateParts.length != 3) continue;
 
-                try
-                {
+                try {
                     int year = Integer.parseInt(dateParts[0]);
                     int month = Integer.parseInt(dateParts[1]) - 1;
                     int day = Integer.parseInt(dateParts[2]);
 
                     Calendar filedate = Calendar.getInstance();
                     filedate.set(year, month, day);
-                    if (filedate.before(expirationBoundary))
-                    {
+                    if (filedate.before(expirationBoundary)) {
                         file.delete();
                     }
                 }
-                catch (NumberFormatException e)
-                {
+                catch (NumberFormatException e) {
                     //throw this away - effectively ignoring any files without the correct filename format
                     GriefPrevention.AddLogEntry("Ignoring an unexpected file in the abridged logs folder: " + file.getName(), CustomLogEntryTypes.Debug, true);
                 }
             }
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     //transfers the internal buffer to a log file
-    private class EntryWriter implements Runnable
-    {
+    private class EntryWriter implements Runnable {
         @Override
         public void run()
         {
@@ -175,8 +161,7 @@ public class CustomLogger {
         }
     }
 
-    private class ExpiredLogRemover implements Runnable
-    {
+    private class ExpiredLogRemover implements Runnable {
         @Override
         public void run()
         {

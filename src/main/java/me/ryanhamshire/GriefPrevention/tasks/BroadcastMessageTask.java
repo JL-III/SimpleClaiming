@@ -22,7 +22,7 @@ import org.bukkit.Bukkit;
 
 //sends a message to all online players
 //used to send delayed messages, for example a quit message after the player has been gone a while 
-class BroadcastMessageTask implements Runnable
+public class BroadcastMessageTask implements Runnable
 {
     private final String message;
 

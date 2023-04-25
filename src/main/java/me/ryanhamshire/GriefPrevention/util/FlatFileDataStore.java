@@ -608,7 +608,7 @@ public class FlatFileDataStore extends DataStore
     }
 
     @Override
-    synchronized PlayerData getPlayerDataFromStorage(UUID playerID)
+    public synchronized PlayerData getPlayerDataFromStorage(UUID playerID)
     {
         File playerFile = new File(playerDataFolderPath + File.separator + playerID.toString());
 
@@ -873,7 +873,7 @@ public class FlatFileDataStore extends DataStore
     }
 
     @Override
-    synchronized void close() { }
+    public synchronized void close() { }
 
     @Override
     int getSchemaVersionFromStorage()

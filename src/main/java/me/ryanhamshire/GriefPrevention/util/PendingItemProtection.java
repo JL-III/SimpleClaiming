@@ -8,8 +8,8 @@ import java.util.UUID;
 public class PendingItemProtection {
     public Location location;
     public UUID owner;
-    long expirationTimestamp;
-    ItemStack itemStack;
+    public long expirationTimestamp;
+    public ItemStack itemStack;
 
     public PendingItemProtection(Location location, UUID owner, long expirationTimestamp, ItemStack itemStack) {
         this.location = location;

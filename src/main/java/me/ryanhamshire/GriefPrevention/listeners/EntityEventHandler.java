@@ -19,7 +19,7 @@
 package me.ryanhamshire.GriefPrevention.listeners;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.PendingItemProtection;
+import me.ryanhamshire.GriefPrevention.util.PendingItemProtection;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
@@ -579,6 +579,7 @@ public class EntityEventHandler implements Listener
         Player player = (Player) entity;
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
+        //TODO take a closer look at siege functionality here and remove
         //if involved in a siege
         if (playerData.siegeData != null)
         {
@@ -1116,6 +1117,7 @@ public class EntityEventHandler implements Listener
                             //otherwise disallow in non-pvp worlds (and also pvp worlds if configured to do so)
                             if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
                             {
+                                //TODO look at this implementation as it cannot be made public apparently
                                 String ownerName = GriefPrevention.lookupPlayerName(owner);
                                 String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
                                 if (attacker.hasPermission("griefprevention.ignoreclaims"))

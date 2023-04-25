@@ -24,9 +24,7 @@ import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
-import me.ryanhamshire.GriefPrevention.util.WorldGuardWrapper;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
-import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.claim.CreateClaimResult;
 import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
 import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
@@ -35,12 +33,10 @@ import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
-import me.ryanhamshire.GriefPrevention.tasks.SecureClaimTask;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -50,7 +46,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -60,7 +55,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,8 +80,8 @@ public abstract class DataStore
     protected ConcurrentHashMap<String, Integer> permissionToBonusBlocksMap = new ConcurrentHashMap<>();
 
     //in-memory cache for claim data
-    ArrayList<Claim> claims = new ArrayList<>();
-    ConcurrentHashMap<Long, ArrayList<Claim>> chunksToClaimsMap = new ConcurrentHashMap<>();
+    public ArrayList<Claim> claims = new ArrayList<>();
+    public ConcurrentHashMap<Long, ArrayList<Claim>> chunksToClaimsMap = new ConcurrentHashMap<>();
 
     //in-memory cache for messages
     private String[] messages;
@@ -118,9 +112,10 @@ public abstract class DataStore
     private int currentSchemaVersion = -1;  //-1 means not determined yet
 
     //video links
-    static final String SURVIVAL_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpuser" + ChatColor.RESET;
-    static final String CREATIVE_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpcrea" + ChatColor.RESET;
-    static final String SUBDIVISION_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpsub" + ChatColor.RESET;
+    //TODO change these video links, or remove the feature altogether
+    public static final String SURVIVAL_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpuser" + ChatColor.RESET;
+    public static final String CREATIVE_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpcrea" + ChatColor.RESET;
+    public static final String SUBDIVISION_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpsub" + ChatColor.RESET;
 
     //list of UUIDs which are soft-muted
     ConcurrentHashMap<UUID, Boolean> softMuteMap = new ConcurrentHashMap<>();
@@ -293,7 +288,7 @@ public abstract class DataStore
     }
 
     //updates soft mute map and data file
-    boolean toggleSoftMute(UUID playerID)
+    public boolean toggleSoftMute(UUID playerID)
     {
         boolean newValue = !this.isSoftMuted(playerID);
 
@@ -352,7 +347,7 @@ public abstract class DataStore
     }
 
     //removes cached player data from memory
-    synchronized void clearCachedPlayerData(UUID playerID)
+    public synchronized void clearCachedPlayerData(UUID playerID)
     {
         this.playerNameToPlayerDataMap.remove(playerID);
     }
@@ -635,7 +630,7 @@ public abstract class DataStore
         return playerData;
     }
 
-    abstract PlayerData getPlayerDataFromStorage(UUID playerID);
+    public abstract PlayerData getPlayerDataFromStorage(UUID playerID);
 
     //deletes a claim or subdivision
     synchronized public void deleteClaim(Claim claim)
@@ -649,7 +644,7 @@ public abstract class DataStore
         this.deleteClaim(claim, true, releasePets);
     }
 
-    synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean releasePets)
+    public synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean releasePets)
     {
         //delete any children
         for (int j = 1; (j - 1) < claim.children.size(); j++)
@@ -1149,219 +1144,219 @@ public abstract class DataStore
 
     //starts a siege on a claim
     //does NOT check siege cooldowns, see onCooldown() below
-    synchronized public void startSiege(Player attacker, Player defender, Claim defenderClaim)
-    {
-        //fill-in the necessary SiegeData instance
-        SiegeData siegeData = new SiegeData(attacker, defender, defenderClaim);
-        PlayerData attackerData = this.getPlayerData(attacker.getUniqueId());
-        PlayerData defenderData = this.getPlayerData(defender.getUniqueId());
-        attackerData.siegeData = siegeData;
-        defenderData.siegeData = siegeData;
-        defenderClaim.siegeData = siegeData;
-
-        //start a task to monitor the siege
-        //why isn't this a "repeating" task?
-        //because depending on the status of the siege at the time the task runs, there may or may not be a reason to run the task again
-        SiegeCheckupTask task = new SiegeCheckupTask(siegeData);
-        siegeData.checkupTaskID = GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(GriefPrevention.instance, task, 20L * 30);
-    }
+//    synchronized public void startSiege(Player attacker, Player defender, Claim defenderClaim)
+//    {
+//        //fill-in the necessary SiegeData instance
+//        SiegeData siegeData = new SiegeData(attacker, defender, defenderClaim);
+//        PlayerData attackerData = this.getPlayerData(attacker.getUniqueId());
+//        PlayerData defenderData = this.getPlayerData(defender.getUniqueId());
+//        attackerData.siegeData = siegeData;
+//        defenderData.siegeData = siegeData;
+//        defenderClaim.siegeData = siegeData;
+//
+//        //start a task to monitor the siege
+//        //why isn't this a "repeating" task?
+//        //because depending on the status of the siege at the time the task runs, there may or may not be a reason to run the task again
+//        SiegeCheckupTask task = new SiegeCheckupTask(siegeData);
+//        siegeData.checkupTaskID = GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(GriefPrevention.instance, task, 20L * 30);
+//    }
 
     //ends a siege
     //either winnerName or loserName can be null, but not both
-    synchronized public void endSiege(SiegeData siegeData, String winnerName, String loserName, List<ItemStack> drops)
-    {
-        boolean grantAccess = false;
-
-        //determine winner and loser
-        if (winnerName == null && loserName != null)
-        {
-            if (siegeData.attacker.getName().equals(loserName))
-            {
-                winnerName = siegeData.defender.getName();
-            }
-            else
-            {
-                winnerName = siegeData.attacker.getName();
-            }
-        }
-        else if (winnerName != null && loserName == null)
-        {
-            if (siegeData.attacker.getName().equals(winnerName))
-            {
-                loserName = siegeData.defender.getName();
-            }
-            else
-            {
-                loserName = siegeData.attacker.getName();
-            }
-        }
-
-        //if the attacker won, plan to open the doors for looting
-        if (siegeData.attacker.getName().equals(winnerName))
-        {
-            grantAccess = true;
-        }
-
-        PlayerData attackerData = this.getPlayerData(siegeData.attacker.getUniqueId());
-        attackerData.siegeData = null;
-
-        PlayerData defenderData = this.getPlayerData(siegeData.defender.getUniqueId());
-        defenderData.siegeData = null;
-        defenderData.lastSiegeEndTimeStamp = System.currentTimeMillis();
-
-        //start a cooldown for this attacker/defender pair
-        Long now = Calendar.getInstance().getTimeInMillis();
-        Long cooldownEnd = now + 1000 * 60 * GriefPrevention.instance.config_siege_cooldownEndInMinutes;  //one hour from now
-        this.siegeCooldownRemaining.put(siegeData.attacker.getName() + "_" + siegeData.defender.getName(), cooldownEnd);
-
-        //start cooldowns for every attacker/involved claim pair
-        for (int i = 0; i < siegeData.claims.size(); i++)
-        {
-            Claim claim = siegeData.claims.get(i);
-            claim.siegeData = null;
-            this.siegeCooldownRemaining.put(siegeData.attacker.getName() + "_" + claim.getOwnerName(), cooldownEnd);
-
-            //if doors should be opened for looting, do that now
-            if (grantAccess)
-            {
-                claim.doorsOpen = true;
-            }
-        }
-
-        //cancel the siege checkup task
-        GriefPrevention.instance.getServer().getScheduler().cancelTask(siegeData.checkupTaskID);
-
-        //notify everyone who won and lost
-        if (winnerName != null && loserName != null)
-        {
-            GriefPrevention.instance.getServer().broadcastMessage(winnerName + " defeated " + loserName + " in siege warfare!");
-        }
-
-        //if the claim should be opened to looting
-        if (grantAccess)
-        {
-
-            Player winner = GriefPrevention.instance.getServer().getPlayer(winnerName);
-            if (winner != null)
-            {
-                //notify the winner
-                GriefPrevention.sendMessage(winner, TextMode.Success, Messages.SiegeWinDoorsOpen);
-
-                //schedule a task to secure the claims in about 5 minutes
-                SecureClaimTask task = new SecureClaimTask(siegeData);
-
-                GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
-                        GriefPrevention.instance, task, 20L * GriefPrevention.instance.config_siege_doorsOpenSeconds
-                );
-            }
-        }
-
-        //if the siege ended due to death, transfer inventory to winner
-        if (drops != null)
-        {
-
-            Player winner = GriefPrevention.instance.getServer().getPlayer(winnerName);
-
-            Player loser = GriefPrevention.instance.getServer().getPlayer(loserName);
-            if (winner != null && loser != null)
-            {
-                //try to add any drops to the winner's inventory
-                for (ItemStack stack : drops)
-                {
-                    if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
-
-                    HashMap<Integer, ItemStack> wontFitItems = winner.getInventory().addItem(stack);
-
-                    //drop any remainder on the ground at his feet
-                    Object[] keys = wontFitItems.keySet().toArray();
-                    Location winnerLocation = winner.getLocation();
-                    for (Map.Entry<Integer, ItemStack> wontFitItem : wontFitItems.entrySet())
-                    {
-                        winner.getWorld().dropItemNaturally(winnerLocation, wontFitItem.getValue());
-                    }
-                }
-
-                drops.clear();
-            }
-        }
-    }
-
-    //timestamp for each siege cooldown to end
-    private final HashMap<String, Long> siegeCooldownRemaining = new HashMap<>();
-
-    //whether or not a sieger can siege a particular victim or claim, considering only cooldowns
-    synchronized public boolean onCooldown(Player attacker, Player defender, Claim defenderClaim)
-    {
-        Long cooldownEnd = null;
-
-        //look for an attacker/defender cooldown
-        if (this.siegeCooldownRemaining.get(attacker.getName() + "_" + defender.getName()) != null)
-        {
-            cooldownEnd = this.siegeCooldownRemaining.get(attacker.getName() + "_" + defender.getName());
-
-            if (Calendar.getInstance().getTimeInMillis() < cooldownEnd)
-            {
-                return true;
-            }
-
-            //if found but expired, remove it
-            this.siegeCooldownRemaining.remove(attacker.getName() + "_" + defender.getName());
-        }
-
-        //look for genderal defender cooldown
-        PlayerData defenderData = this.getPlayerData(defender.getUniqueId());
-        if (defenderData.lastSiegeEndTimeStamp > 0)
-        {
-            long now = System.currentTimeMillis();
-            if (now - defenderData.lastSiegeEndTimeStamp > 1000 * 60 * 15) //15 minutes in milliseconds
-            {
-                return true;
-            }
-        }
-
-        //look for an attacker/claim cooldown
-        if (cooldownEnd == null && this.siegeCooldownRemaining.get(attacker.getName() + "_" + defenderClaim.getOwnerName()) != null)
-        {
-            cooldownEnd = this.siegeCooldownRemaining.get(attacker.getName() + "_" + defenderClaim.getOwnerName());
-
-            if (Calendar.getInstance().getTimeInMillis() < cooldownEnd)
-            {
-                return true;
-            }
-
-            //if found but expired, remove it
-            this.siegeCooldownRemaining.remove(attacker.getName() + "_" + defenderClaim.getOwnerName());
-        }
-
-        return false;
-    }
-
-    //extend a siege, if it's possible to do so
-    synchronized void tryExtendSiege(Player player, Claim claim)
-    {
-        PlayerData playerData = this.getPlayerData(player.getUniqueId());
-
-        //player must be sieged
-        if (playerData.siegeData == null) return;
-
-        //claim isn't already under the same siege
-        if (playerData.siegeData.claims.contains(claim)) return;
-
-        //admin claims can't be sieged
-        if (claim.isAdminClaim()) return;
-
-        //player must have some level of permission to be sieged in a claim
-        Claim currentClaim = claim;
-        while (!currentClaim.hasExplicitPermission(player, ClaimPermission.Access))
-        {
-            if (currentClaim.parent == null) return;
-            currentClaim = currentClaim.parent;
-        }
-
-        //otherwise extend the siege
-        playerData.siegeData.claims.add(claim);
-        claim.siegeData = playerData.siegeData;
-    }
+//    synchronized public void endSiege(SiegeData siegeData, String winnerName, String loserName, List<ItemStack> drops)
+//    {
+//        boolean grantAccess = false;
+//
+//        //determine winner and loser
+//        if (winnerName == null && loserName != null)
+//        {
+//            if (siegeData.attacker.getName().equals(loserName))
+//            {
+//                winnerName = siegeData.defender.getName();
+//            }
+//            else
+//            {
+//                winnerName = siegeData.attacker.getName();
+//            }
+//        }
+//        else if (winnerName != null && loserName == null)
+//        {
+//            if (siegeData.attacker.getName().equals(winnerName))
+//            {
+//                loserName = siegeData.defender.getName();
+//            }
+//            else
+//            {
+//                loserName = siegeData.attacker.getName();
+//            }
+//        }
+//
+//        //if the attacker won, plan to open the doors for looting
+//        if (siegeData.attacker.getName().equals(winnerName))
+//        {
+//            grantAccess = true;
+//        }
+//
+//        PlayerData attackerData = this.getPlayerData(siegeData.attacker.getUniqueId());
+//        attackerData.siegeData = null;
+//
+//        PlayerData defenderData = this.getPlayerData(siegeData.defender.getUniqueId());
+//        defenderData.siegeData = null;
+//        defenderData.lastSiegeEndTimeStamp = System.currentTimeMillis();
+//
+//        //start a cooldown for this attacker/defender pair
+//        Long now = Calendar.getInstance().getTimeInMillis();
+//        Long cooldownEnd = now + 1000 * 60 * GriefPrevention.instance.config_siege_cooldownEndInMinutes;  //one hour from now
+//        this.siegeCooldownRemaining.put(siegeData.attacker.getName() + "_" + siegeData.defender.getName(), cooldownEnd);
+//
+//        //start cooldowns for every attacker/involved claim pair
+//        for (int i = 0; i < siegeData.claims.size(); i++)
+//        {
+//            Claim claim = siegeData.claims.get(i);
+//            claim.siegeData = null;
+//            this.siegeCooldownRemaining.put(siegeData.attacker.getName() + "_" + claim.getOwnerName(), cooldownEnd);
+//
+//            //if doors should be opened for looting, do that now
+//            if (grantAccess)
+//            {
+//                claim.doorsOpen = true;
+//            }
+//        }
+//
+//        //cancel the siege checkup task
+//        GriefPrevention.instance.getServer().getScheduler().cancelTask(siegeData.checkupTaskID);
+//
+//        //notify everyone who won and lost
+//        if (winnerName != null && loserName != null)
+//        {
+//            GriefPrevention.instance.getServer().broadcastMessage(winnerName + " defeated " + loserName + " in siege warfare!");
+//        }
+//
+//        //if the claim should be opened to looting
+//        if (grantAccess)
+//        {
+//
+//            Player winner = GriefPrevention.instance.getServer().getPlayer(winnerName);
+//            if (winner != null)
+//            {
+//                //notify the winner
+//                GriefPrevention.sendMessage(winner, TextMode.Success, Messages.SiegeWinDoorsOpen);
+//
+//                //schedule a task to secure the claims in about 5 minutes
+//                SecureClaimTask task = new SecureClaimTask(siegeData);
+//
+//                GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
+//                        GriefPrevention.instance, task, 20L * GriefPrevention.instance.config_siege_doorsOpenSeconds
+//                );
+//            }
+//        }
+//
+//        //if the siege ended due to death, transfer inventory to winner
+//        if (drops != null)
+//        {
+//
+//            Player winner = GriefPrevention.instance.getServer().getPlayer(winnerName);
+//
+//            Player loser = GriefPrevention.instance.getServer().getPlayer(loserName);
+//            if (winner != null && loser != null)
+//            {
+//                //try to add any drops to the winner's inventory
+//                for (ItemStack stack : drops)
+//                {
+//                    if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
+//
+//                    HashMap<Integer, ItemStack> wontFitItems = winner.getInventory().addItem(stack);
+//
+//                    //drop any remainder on the ground at his feet
+//                    Object[] keys = wontFitItems.keySet().toArray();
+//                    Location winnerLocation = winner.getLocation();
+//                    for (Map.Entry<Integer, ItemStack> wontFitItem : wontFitItems.entrySet())
+//                    {
+//                        winner.getWorld().dropItemNaturally(winnerLocation, wontFitItem.getValue());
+//                    }
+//                }
+//
+//                drops.clear();
+//            }
+//        }
+//    }
+//
+//    //timestamp for each siege cooldown to end
+//    private final HashMap<String, Long> siegeCooldownRemaining = new HashMap<>();
+//
+//    //whether or not a sieger can siege a particular victim or claim, considering only cooldowns
+//    synchronized public boolean onCooldown(Player attacker, Player defender, Claim defenderClaim)
+//    {
+//        Long cooldownEnd = null;
+//
+//        //look for an attacker/defender cooldown
+//        if (this.siegeCooldownRemaining.get(attacker.getName() + "_" + defender.getName()) != null)
+//        {
+//            cooldownEnd = this.siegeCooldownRemaining.get(attacker.getName() + "_" + defender.getName());
+//
+//            if (Calendar.getInstance().getTimeInMillis() < cooldownEnd)
+//            {
+//                return true;
+//            }
+//
+//            //if found but expired, remove it
+//            this.siegeCooldownRemaining.remove(attacker.getName() + "_" + defender.getName());
+//        }
+//
+//        //look for genderal defender cooldown
+//        PlayerData defenderData = this.getPlayerData(defender.getUniqueId());
+//        if (defenderData.lastSiegeEndTimeStamp > 0)
+//        {
+//            long now = System.currentTimeMillis();
+//            if (now - defenderData.lastSiegeEndTimeStamp > 1000 * 60 * 15) //15 minutes in milliseconds
+//            {
+//                return true;
+//            }
+//        }
+//
+//        //look for an attacker/claim cooldown
+//        if (cooldownEnd == null && this.siegeCooldownRemaining.get(attacker.getName() + "_" + defenderClaim.getOwnerName()) != null)
+//        {
+//            cooldownEnd = this.siegeCooldownRemaining.get(attacker.getName() + "_" + defenderClaim.getOwnerName());
+//
+//            if (Calendar.getInstance().getTimeInMillis() < cooldownEnd)
+//            {
+//                return true;
+//            }
+//
+//            //if found but expired, remove it
+//            this.siegeCooldownRemaining.remove(attacker.getName() + "_" + defenderClaim.getOwnerName());
+//        }
+//
+//        return false;
+//    }
+//
+//    //extend a siege, if it's possible to do so
+//    synchronized void tryExtendSiege(Player player, Claim claim)
+//    {
+//        PlayerData playerData = this.getPlayerData(player.getUniqueId());
+//
+//        //player must be sieged
+//        if (playerData.siegeData == null) return;
+//
+//        //claim isn't already under the same siege
+//        if (playerData.siegeData.claims.contains(claim)) return;
+//
+//        //admin claims can't be sieged
+//        if (claim.isAdminClaim()) return;
+//
+//        //player must have some level of permission to be sieged in a claim
+//        Claim currentClaim = claim;
+//        while (!currentClaim.hasExplicitPermission(player, ClaimPermission.Access))
+//        {
+//            if (currentClaim.parent == null) return;
+//            currentClaim = currentClaim.parent;
+//        }
+//
+//        //otherwise extend the siege
+//        playerData.siegeData.claims.add(claim);
+//        claim.siegeData = playerData.siegeData;
+//    }
 
     //deletes all claims owned by a player
     synchronized public void deleteClaimsForPlayer(UUID playerID, boolean releasePets)
@@ -1413,7 +1408,7 @@ public abstract class DataStore
         return result;
     }
 
-    void resizeClaimWithChecks(Player player, PlayerData playerData, int newx1, int newx2, int newy1, int newy2, int newz1, int newz2)
+    public void resizeClaimWithChecks(Player player, PlayerData playerData, int newx1, int newx2, int newy1, int newy2, int newz1, int newz2)
     {
         //for top level claims, apply size rules and claim blocks requirement
         if (playerData.claimResizing.parent == null)
@@ -1583,7 +1578,7 @@ public abstract class DataStore
         }
     }
 
-    protected void loadMessages()
+    public void loadMessages()
     {
         Messages[] messageIDs = Messages.values();
         this.messages = new String[Messages.values().length];
@@ -1935,7 +1930,7 @@ public abstract class DataStore
         return resultNames;
     }
 
-    abstract void close();
+    public abstract void close();
 
     private class SavePlayerDataThread extends Thread
     {
@@ -1989,7 +1984,7 @@ public abstract class DataStore
     }
 
     //deletes all the land claims in a specified world
-    void deleteClaimsInWorld(World world, boolean deleteAdminClaims)
+    public void deleteClaimsInWorld(World world, boolean deleteAdminClaims)
     {
         for (int i = 0; i < claims.size(); i++)
         {

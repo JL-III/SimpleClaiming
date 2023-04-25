@@ -21,8 +21,7 @@ public class WelcomeTask implements Runnable
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         //abort if player has logged out since this task was scheduled
         if (!this.player.isOnline()) return;
 
@@ -31,8 +30,7 @@ public class WelcomeTask implements Runnable
         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
 
         //give the player a reference book for later
-        if (GriefPrevention.instance.config_claims_supplyPlayerManual)
-        {
+        if (GriefPrevention.instance.config_claims_supplyPlayerManual) {
             ItemFactory factory = Bukkit.getItemFactory();
             BookMeta meta = (BookMeta) factory.getItemMeta(Material.WRITTEN_BOOK);
 
@@ -50,8 +48,7 @@ public class WelcomeTask implements Runnable
             String infoToolName = GriefPrevention.instance.config_claims_investigationTool.name().replace('_', ' ').toLowerCase();
             String configClaimTools = datastore.getMessage(Messages.BookTools, editToolName, infoToolName);
             page1.append(configClaimTools);
-            if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius < 0)
-            {
+            if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius < 0) {
                 page1.append(datastore.getMessage(Messages.BookDisabledChestClaims));
             }
 
@@ -74,8 +71,5 @@ public class WelcomeTask implements Runnable
             item.setItemMeta(meta);
             player.getInventory().addItem(item);
         }
-
     }
-
-
 }

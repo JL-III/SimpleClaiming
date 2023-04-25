@@ -27,7 +27,7 @@ public class EconomyHandler implements Listener {
      *
      * @return the current wrapped Economy or null if no Economy is active
      */
-    EconomyWrapper getWrapper() {
+    public EconomyWrapper getWrapper() {
         // Attempt to load the Economy if it is not already set up.
         loadEconomy(false);
 
@@ -118,7 +118,7 @@ public class EconomyHandler implements Listener {
      * Wrapper class used to prevent Bukkit from logging an error and
      * preventing registering events for the listener when Vault is not loaded.
      */
-    static class EconomyWrapper
+    public static class EconomyWrapper
     {
 
         private final Economy economy;
@@ -128,7 +128,7 @@ public class EconomyHandler implements Listener {
             this.economy = economy;
         }
 
-        Economy getEconomy()
+        public Economy getEconomy()
         {
             return this.economy;
         }

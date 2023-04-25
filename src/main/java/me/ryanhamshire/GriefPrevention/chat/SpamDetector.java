@@ -4,7 +4,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class SpamDetector
+public class SpamDetector
 {
     //last chat message shown and its timestamp, regardless of who sent it
     private String lastChatMessage = "";
@@ -28,7 +28,7 @@ class SpamDetector
         return data;
     }
 
-    SpamAnalysisResult AnalyzeMessage(UUID chatterID, String message, long timestamp)
+    public SpamAnalysisResult AnalyzeMessage(UUID chatterID, String message, long timestamp)
     {
         SpamAnalysisResult result = new SpamAnalysisResult();
         result.finalMessage = message;

@@ -1,9 +1,9 @@
 package me.ryanhamshire.GriefPrevention.chat;
 
-class SpamAnalysisResult
+public class SpamAnalysisResult
 {
-    String finalMessage;
-    boolean shouldWarnChatter = false;
-    boolean shouldBanChatter = false;
-    String muteReason;
+    public String finalMessage;
+    public boolean shouldWarnChatter = false;
+    public boolean shouldBanChatter = false;
+    public String muteReason;
 }
