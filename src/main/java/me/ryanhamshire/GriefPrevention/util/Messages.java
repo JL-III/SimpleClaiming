@@ -2,6 +2,7 @@ package me.ryanhamshire.GriefPrevention.util;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.MessageType;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import me.ryanhamshire.GriefPrevention.tasks.SendPlayerMessageTask;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -28,6 +29,17 @@ public class Messages {
         }
         else {
             player.sendMessage(color + message);
+        }
+    }
+
+    public static void sendMessage(Player player, TextMode textMode, String message) {
+        if (message == null || message.length() == 0) return;
+
+        if (player == null) {
+            GriefPrevention.AddLogEntry(textMode.getColor() + message);
+        }
+        else {
+            player.sendMessage(textMode.getColor() + message);
         }
     }
 

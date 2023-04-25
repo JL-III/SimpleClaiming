@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import me.ryanhamshire.GriefPrevention.commands.ChungusCommand;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;
@@ -83,26 +84,19 @@ public class GriefPrevention extends JavaPlugin
 {
     //for convenience, a reference to the instance of this plugin
     public static GriefPrevention instance;
-
     //for logging to the console and log file
     private static Logger log;
-
     //this handles data storage, like player and region data
     public DataStore dataStore;
-
     // Event handlers with common functionality
     public EntityEventHandler entityEventHandler;
-
     //this tracks item stacks expected to drop which will need protection
     public ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
-
     //log entry manager for GP's custom log files
     CustomLogger customLogger;
-
     // Player event handler
     PlayerEventHandler playerEventHandler;
     //configuration variables, loaded/saved from a config.yml
-
     //claim mode for each world
     public ConcurrentHashMap<World, ClaimsMode> config_claims_worldModes;
     private boolean config_creativeWorldsExist;                     //note on whether there are any creative mode worlds, to save cpu cycles on a common hash lookup
@@ -258,17 +252,14 @@ public class GriefPrevention extends JavaPlugin
     public static final int NOTIFICATION_SECONDS = 20;
 
     //adds a server log entry
-    public static synchronized void AddLogEntry(String entry, CustomLogEntryTypes customLogType, boolean excludeFromServerLogs)
-    {
-        if (customLogType != null && GriefPrevention.instance.customLogger != null)
-        {
+    public static synchronized void AddLogEntry(String entry, CustomLogEntryTypes customLogType, boolean excludeFromServerLogs) {
+        if (customLogType != null && GriefPrevention.instance.customLogger != null) {
             GriefPrevention.instance.customLogger.AddEntry(entry, customLogType);
         }
         if (!excludeFromServerLogs) log.info(entry);
     }
 
-    public static synchronized void AddLogEntry(String entry, CustomLogEntryTypes customLogType)
-    {
+    public static synchronized void AddLogEntry(String entry, CustomLogEntryTypes customLogType) {
         AddLogEntry(entry, customLogType, false);
     }
 
@@ -278,8 +269,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //initializes well...   everything
-    public void onEnable()
-    {
+    public void onEnable() {
         instance = this;
         log = instance.getLogger();
 
@@ -312,11 +302,9 @@ public class GriefPrevention extends JavaPlugin
 
         //if not using the database because it's not configured or because there was a problem, use the file system to store data
         //this is the preferred method, as it's simpler than the database scenario
-        if (this.dataStore == null)
-        {
+        if (this.dataStore == null) {
             File oldclaimdata = new File(getDataFolder(), "ClaimData");
-            if (oldclaimdata.exists())
-            {
+            if (oldclaimdata.exists()) {
                 if (!FlatFileDataStore.hasData())
                 {
                     File claimdata = new File("plugins" + File.separator + "GriefPreventionData" + File.separator + "ClaimData");
@@ -341,8 +329,7 @@ public class GriefPrevention extends JavaPlugin
 
         //unless claim block accrual is disabled, start the recurring per 10 minute event to give claim blocks to online players
         //20L ~ 1 second
-        if (this.config_claims_blocksAccruedPerHour_default > 0)
-        {
+        if (this.config_claims_blocksAccruedPerHour_default > 0) {
             DeliverClaimBlocksTask task = new DeliverClaimBlocksTask(null, this);
             this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task, 20L * 60 * 10, 20L * 60 * 10);
         }
@@ -370,13 +357,12 @@ public class GriefPrevention extends JavaPlugin
         entityEventHandler = new EntityEventHandler(this.dataStore, this);
         pluginManager.registerEvents(entityEventHandler, this);
 
-        //siege events
-//        SiegeEventHandler siegeEventHandler = new SiegeEventHandler();
-//        pluginManager.registerEvents(siegeEventHandler, this);
-
         //vault-based economy integration
         economyHandler = new EconomyHandler(this);
         pluginManager.registerEvents(economyHandler, this);
+
+        //register commands
+        Bukkit.getPluginCommand("gp").setExecutor(new ChungusCommand(economyHandler, playerEventHandler));
 
         //cache offline players
         OfflinePlayer[] offlinePlayers = this.getServer().getOfflinePlayers();
@@ -387,22 +373,15 @@ public class GriefPrevention extends JavaPlugin
         //load ignore lists for any already-online players
         @SuppressWarnings("unchecked")
         Collection<Player> players = (Collection<Player>) GriefPrevention.instance.getServer().getOnlinePlayers();
-        for (Player player : players)
-        {
+        for (Player player : players) {
             new IgnoreLoaderThread(player.getUniqueId(), this.dataStore.getPlayerData(player.getUniqueId()).ignoredPlayers).start();
         }
 
         AddLogEntry("Boot finished.");
 
-//        try
-//        {
-//            new MetricsHandler(this, dataMode);
-//        }
-//        catch (Throwable ignored) {}
     }
 
-    private void loadConfig()
-    {
+    public void loadConfig() {
         //load the config if it exists
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(DataStore.configFilePath));
         FileConfiguration outConfig = new YamlConfiguration();
@@ -994,7 +973,7 @@ public class GriefPrevention extends JavaPlugin
 
 
 
-    void setIgnoreStatus(OfflinePlayer ignorer, OfflinePlayer ignoree, IgnoreMode mode)
+    public void setIgnoreStatus(OfflinePlayer ignorer, OfflinePlayer ignoree, IgnoreMode mode)
     {
         PlayerData playerData = this.dataStore.getPlayerData(ignorer.getUniqueId());
         if (mode == IgnoreMode.None)
@@ -1017,7 +996,7 @@ public class GriefPrevention extends JavaPlugin
     public enum IgnoreMode
     {None, StandardIgnore, AdminIgnore}
 
-    private String trustEntryToPlayerName(String entry)
+    public String trustEntryToPlayerName(String entry)
     {
         if (entry.startsWith("[") || entry.equals("public"))
         {
@@ -1034,7 +1013,7 @@ public class GriefPrevention extends JavaPlugin
         return location.getWorld().getName() + ": x" + location.getBlockX() + ", z" + location.getBlockZ();
     }
 
-    private boolean abandonClaimHandler(Player player, boolean deleteTopLevelClaim)
+    public boolean abandonClaimHandler(Player player, boolean deleteTopLevelClaim)
     {
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
@@ -1092,7 +1071,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //helper method keeps the trust commands consistent and eliminates duplicate code
-    private void handleTrustCommand(Player player, ClaimPermission permissionLevel, String recipientName)
+    public void handleTrustCommand(Player player, ClaimPermission permissionLevel, String recipientName)
     {
         //determine which claim the player is standing in
         Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);

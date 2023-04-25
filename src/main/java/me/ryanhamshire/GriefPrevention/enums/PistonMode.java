@@ -7,17 +7,14 @@ public enum PistonMode {
     CLAIMS_ONLY,
     IGNORED;
 
-    public static PistonMode of(String value)
-    {
+    public static PistonMode of(String value) {
         if (value == null) {
             return CLAIMS_ONLY;
         }
-        try
-        {
+        try {
             return valueOf(value.toUpperCase());
         }
-        catch (IllegalArgumentException e)
-        {
+        catch (IllegalArgumentException e) {
             return CLAIMS_ONLY;
         }
     }

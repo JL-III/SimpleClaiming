@@ -10,13 +10,14 @@ import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;
+import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
 import me.ryanhamshire.GriefPrevention.tasks.AutoExtendClaimTask;
-import me.ryanhamshire.GriefPrevention.tasks.PlayerRescueTask;
 import me.ryanhamshire.GriefPrevention.tasks.WelcomeTask;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.util.Messages;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
+import me.ryanhamshire.GriefPrevention.util.PlayerName;
 import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import net.milkbowl.vault.economy.Economy;
@@ -31,15 +32,25 @@ import org.bukkit.inventory.ItemStack;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static me.ryanhamshire.GriefPrevention.GriefPrevention.getfriendlyLocationString;
+
 public class ChungusCommand implements CommandExecutor {
 
+    private Player player;
+    private EconomyHandler economyHandler;
+    private PlayerEventHandler playerEventHandler;
+
+    public ChungusCommand(EconomyHandler economyHandler, PlayerEventHandler playerEventHandler) {
+        this.economyHandler = economyHandler;
+        this.playerEventHandler = playerEventHandler;
+    }
+
     //handles slash commands
-    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args)
-    {
+    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
 
         Player player = null;
-        if (sender instanceof Player)
-        {
+
+        if (sender instanceof Player) {
             player = (Player) sender;
         }
 
@@ -48,18 +59,18 @@ public class ChungusCommand implements CommandExecutor {
         {
             if (!GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
             {
-                Messages.sendMessage(player, TextMode.Err, MessageType.ClaimsDisabledWorld);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ClaimsDisabledWorld);
                 return true;
             }
 
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
             //if he's at the claim count per player limit already and doesn't have permission to bypass, display an error message
             if (GriefPrevention.instance.config_claims_maxClaimsPerPlayer > 0 &&
                     !player.hasPermission("griefprevention.overrideclaimcountlimit") &&
                     playerData.getClaims().size() >= GriefPrevention.instance.config_claims_maxClaimsPerPlayer)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ClaimCreationFailedOverClaimCountLimit);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ClaimCreationFailedOverClaimCountLimit);
                 return true;
             }
 
@@ -73,7 +84,7 @@ public class ChungusCommand implements CommandExecutor {
                 //if player has exactly one land claim, this requires the claim modification tool to be in hand (or creative mode player)
                 if (playerData.getClaims().size() == 1 && player.getGameMode() != GameMode.CREATIVE && player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.MustHoldModificationToolForThat);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.MustHoldModificationToolForThat);
                     return true;
                 }
 
@@ -85,7 +96,7 @@ public class ChungusCommand implements CommandExecutor {
             {
                 if (playerData.getClaims().size() < 2 && player.getGameMode() != GameMode.CREATIVE && player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.RadiusRequiresGoldenShovel);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.RadiusRequiresGoldenShovel);
                     return true;
                 }
 
@@ -101,7 +112,7 @@ public class ChungusCommand implements CommandExecutor {
 
                 if (specifiedRadius < radius)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.MinimumRadius, String.valueOf(radius));
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.MinimumRadius, String.valueOf(radius));
                     return true;
                 }
                 else
@@ -120,12 +131,12 @@ public class ChungusCommand implements CommandExecutor {
             int remaining = playerData.getRemainingClaimBlocks();
             if (remaining < area)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
                 GriefPrevention.instance.dataStore.tryAdvertiseAdminAlternatives(player);
                 return true;
             }
 
-            CreateClaimResult result = this.dataStore.createClaim(lc.getWorld(),
+            CreateClaimResult result = GriefPrevention.instance.dataStore.createClaim(lc.getWorld(),
                     lc.getBlockX(), gc.getBlockX(),
                     lc.getBlockY() - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
                     gc.getWorld().getHighestBlockYAt(gc) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
@@ -135,26 +146,26 @@ public class ChungusCommand implements CommandExecutor {
             {
                 if (result.claim != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.CreateClaimFailOverlapShort);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimFailOverlapShort);
 
                     BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
                 }
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.CreateClaimFailOverlapRegion);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimFailOverlapRegion);
                 }
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.CreateClaimSuccess);
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.CreateClaimSuccess);
 
                 //link to a video demo of land claiming, based on world type
                 if (GriefPrevention.instance.creativeRulesApply(player.getLocation())) {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
                 else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
                 }
                 BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
                 playerData.claimResizing = null;
@@ -174,11 +185,11 @@ public class ChungusCommand implements CommandExecutor {
                 //link to a video demo of land claiming, based on world type
                 if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
                 else if (GriefPrevention.instance.claimsEnabledForWorld(player.getLocation().getWorld()))
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
                 }
                 return false;
             }
@@ -193,11 +204,11 @@ public class ChungusCommand implements CommandExecutor {
                 //link to a video demo of land claiming, based on world type
                 if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
                 else if (GriefPrevention.instance.claimsEnabledForWorld(player.getLocation().getWorld()))
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
                 }
                 return false;
             }
@@ -205,16 +216,16 @@ public class ChungusCommand implements CommandExecutor {
             //requires claim modification tool in hand
             if (player.getGameMode() != GameMode.CREATIVE && player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.MustHoldModificationToolForThat);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.MustHoldModificationToolForThat);
                 return true;
             }
 
             //must be standing in a land claim
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true, playerData.lastClaim);
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true, playerData.lastClaim);
             if (claim == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.StandInClaimToResize);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.StandInClaimToResize);
                 return true;
             }
 
@@ -222,7 +233,7 @@ public class ChungusCommand implements CommandExecutor {
             Supplier<String> errorMessage = claim.checkPermission(player, ClaimPermission.Edit, null);
             if (errorMessage != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NotYourClaim);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NotYourClaim);
                 return true;
             }
 
@@ -230,13 +241,13 @@ public class ChungusCommand implements CommandExecutor {
             org.bukkit.util.Vector direction = player.getLocation().getDirection();
             if (direction.getY() > .75)
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, MessageType.ClaimsExtendToSky);
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.ClaimsExtendToSky);
                 return true;
             }
 
             if (direction.getY() < -.75)
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, MessageType.ClaimsAutoExtendDownward);
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.ClaimsAutoExtendDownward);
                 return true;
             }
 
@@ -299,7 +310,7 @@ public class ChungusCommand implements CommandExecutor {
 
             //attempt resize
             playerData.claimResizing = claim;
-            this.dataStore.resizeClaimWithChecks(player, playerData, newx1, newx2, newy1, newy2, newz1, newz2);
+            GriefPrevention.instance.dataStore.resizeClaimWithChecks(player, playerData, newx1, newx2, newy1, newy2, newz1, newz2);
             playerData.claimResizing = null;
 
             return true;
@@ -308,30 +319,30 @@ public class ChungusCommand implements CommandExecutor {
         //abandonclaim
         if (cmd.getName().equalsIgnoreCase("abandonclaim") && player != null)
         {
-            return this.abandonClaimHandler(player, false);
+            return GriefPrevention.instance.abandonClaimHandler(player, false);
         }
 
         //abandontoplevelclaim
         if (cmd.getName().equalsIgnoreCase("abandontoplevelclaim") && player != null)
         {
-            return this.abandonClaimHandler(player, true);
+            return GriefPrevention.instance.abandonClaimHandler(player, true);
         }
 
         //ignoreclaims
         if (cmd.getName().equalsIgnoreCase("ignoreclaims") && player != null)
         {
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
             playerData.ignoreClaims = !playerData.ignoreClaims;
 
             //toggle ignore claims mode on or off
             if (!playerData.ignoreClaims)
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.RespectingClaims);
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.RespectingClaims);
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.IgnoringClaims);
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.IgnoringClaims);
             }
 
             return true;
@@ -344,85 +355,41 @@ public class ChungusCommand implements CommandExecutor {
 
             if (args.length != 1 || !"confirm".equalsIgnoreCase(args[0]))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ConfirmAbandonAllClaims);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ConfirmAbandonAllClaims);
                 return true;
             }
 
             //count claims
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             int originalClaimCount = playerData.getClaims().size();
 
             //check count
             if (originalClaimCount == 0)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.YouHaveNoClaims);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.YouHaveNoClaims);
                 return true;
             }
 
-            if (this.config_claims_abandonReturnRatio != 1.0D)
+            if (GriefPrevention.instance.config_claims_abandonReturnRatio != 1.0D)
             {
                 //adjust claim blocks
                 for (Claim claim : playerData.getClaims())
                 {
-                    playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_abandonReturnRatio))));
+                    playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - GriefPrevention.instance.config_claims_abandonReturnRatio))));
                 }
             }
 
 
             //delete them
-            this.dataStore.deleteClaimsForPlayer(player.getUniqueId(), false);
+            GriefPrevention.instance.dataStore.deleteClaimsForPlayer(player.getUniqueId(), false);
 
             //inform the player
             int remainingBlocks = playerData.getRemainingClaimBlocks();
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SuccessfulAbandon, String.valueOf(remainingBlocks));
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SuccessfulAbandon, String.valueOf(remainingBlocks));
 
             //revert any current visualization
             playerData.setVisibleBoundaries(null);
 
-            return true;
-        }
-
-        //restore nature
-        else if (cmd.getName().equalsIgnoreCase("restorenature") && player != null)
-        {
-            //change shovel mode
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            playerData.shovelMode = ShovelMode.RestoreNature;
-            GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.RestoreNatureActivate);
-            return true;
-        }
-
-        //restore nature aggressive mode
-        else if (cmd.getName().equalsIgnoreCase("restorenatureaggressive") && player != null)
-        {
-            //change shovel mode
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            playerData.shovelMode = ShovelMode.RestoreNatureAggressive;
-            GriefPrevention.sendMessage(player, TextMode.Warn, MessageType.RestoreNatureAggressiveActivate);
-            return true;
-        }
-
-        //restore nature fill mode
-        else if (cmd.getName().equalsIgnoreCase("restorenaturefill") && player != null)
-        {
-            //change shovel mode
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            playerData.shovelMode = ShovelMode.RestoreNatureFill;
-
-            //set radius based on arguments
-            playerData.fillRadius = 2;
-            if (args.length > 0)
-            {
-                try
-                {
-                    playerData.fillRadius = Integer.parseInt(args[0]);
-                }
-                catch (Exception exception) { }
-            }
-
-            if (playerData.fillRadius < 0) playerData.fillRadius = 2;
-
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.FillModeActive, String.valueOf(playerData.fillRadius));
             return true;
         }
 
@@ -433,7 +400,7 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length != 1) return false;
 
             //most trust commands use this helper method, it keeps them consistent
-            this.handleTrustCommand(player, ClaimPermission.Build, args[0]);
+            GriefPrevention.instance.handleTrustCommand(player, ClaimPermission.Build, args[0]);
 
             return true;
         }
@@ -442,17 +409,17 @@ public class ChungusCommand implements CommandExecutor {
         else if (cmd.getName().equalsIgnoreCase("transferclaim") && player != null)
         {
             //which claim is the user in?
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true, null);
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true, null);
             if (claim == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.TransferClaimMissing);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.TransferClaimMissing);
                 return true;
             }
 
             //check additional permission for admin claims
             if (claim.isAdminClaim() && !player.hasPermission("griefprevention.adminclaims"))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.TransferClaimPermission);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.TransferClaimPermission);
                 return true;
             }
 
@@ -461,10 +428,10 @@ public class ChungusCommand implements CommandExecutor {
 
             if (args.length > 0)
             {
-                OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+                OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
                 if (targetPlayer == null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                     return true;
                 }
                 newOwnerID = targetPlayer.getUniqueId();
@@ -474,17 +441,17 @@ public class ChungusCommand implements CommandExecutor {
             //change ownerhsip
             try
             {
-                this.dataStore.changeClaimOwner(claim, newOwnerID);
+                GriefPrevention.instance.dataStore.changeClaimOwner(claim, newOwnerID);
             }
             catch (DataStore.NoTransferException e)
             {
-                GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.TransferTopLevel);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.TransferTopLevel);
                 return true;
             }
 
             //confirm
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.TransferSuccess);
-            GriefPrevention.AddLogEntry(player.getName() + " transferred a claim at " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()) + " to " + ownerName + ".", CustomLogEntryTypes.AdminActivity);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.TransferSuccess);
+            GriefPrevention.AddLogEntry(player.getName() + " transferred a claim at " + getfriendlyLocationString(claim.getLesserBoundaryCorner()) + " to " + ownerName + ".", CustomLogEntryTypes.AdminActivity);
 
             return true;
         }
@@ -492,12 +459,12 @@ public class ChungusCommand implements CommandExecutor {
         //trustlist
         else if (cmd.getName().equalsIgnoreCase("trustlist") && player != null)
         {
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true, null);
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true, null);
 
             //if no claim here, error message
             if (claim == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.TrustListNoClaim);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.TrustListNoClaim);
                 return true;
             }
 
@@ -505,7 +472,7 @@ public class ChungusCommand implements CommandExecutor {
             Supplier<String> errorMessage = claim.checkPermission(player, ClaimPermission.Manage, null);
             if (errorMessage != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, errorMessage.get());
+                Messages.sendMessage(player, TextMode.Err.getColor(), errorMessage.get());
                 return true;
             }
 
@@ -517,7 +484,7 @@ public class ChungusCommand implements CommandExecutor {
             ArrayList<String> managers = new ArrayList<>();
             claim.getPermissions(builders, containers, accessors, managers);
 
-            GriefPrevention.sendMessage(player, TextMode.Info, MessageType.TrustListHeader);
+            Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.TrustListHeader);
 
             StringBuilder permissions = new StringBuilder();
             permissions.append(ChatColor.GOLD).append('>');
@@ -525,7 +492,7 @@ public class ChungusCommand implements CommandExecutor {
             if (managers.size() > 0)
             {
                 for (String manager : managers)
-                    permissions.append(this.trustEntryToPlayerName(manager)).append(' ');
+                    permissions.append(GriefPrevention.instance.trustEntryToPlayerName(manager)).append(' ');
             }
 
             player.sendMessage(permissions.toString());
@@ -535,7 +502,7 @@ public class ChungusCommand implements CommandExecutor {
             if (builders.size() > 0)
             {
                 for (String builder : builders)
-                    permissions.append(this.trustEntryToPlayerName(builder)).append(' ');
+                    permissions.append(GriefPrevention.instance.trustEntryToPlayerName(builder)).append(' ');
             }
 
             player.sendMessage(permissions.toString());
@@ -545,7 +512,7 @@ public class ChungusCommand implements CommandExecutor {
             if (containers.size() > 0)
             {
                 for (String container : containers)
-                    permissions.append(this.trustEntryToPlayerName(container)).append(' ');
+                    permissions.append(GriefPrevention.instance.trustEntryToPlayerName(container)).append(' ');
             }
 
             player.sendMessage(permissions.toString());
@@ -555,20 +522,20 @@ public class ChungusCommand implements CommandExecutor {
             if (accessors.size() > 0)
             {
                 for (String accessor : accessors)
-                    permissions.append(this.trustEntryToPlayerName(accessor)).append(' ');
+                    permissions.append(GriefPrevention.instance.trustEntryToPlayerName(accessor)).append(' ');
             }
 
             player.sendMessage(permissions.toString());
 
             player.sendMessage(
-                    ChatColor.GOLD + this.dataStore.getMessage(MessageType.Manage) + " " +
-                            ChatColor.YELLOW + this.dataStore.getMessage(MessageType.Build) + " " +
-                            ChatColor.GREEN + this.dataStore.getMessage(MessageType.Containers) + " " +
-                            ChatColor.BLUE + this.dataStore.getMessage(MessageType.Access));
+                    ChatColor.GOLD + GriefPrevention.instance.dataStore.getMessage(MessageType.Manage) + " " +
+                            ChatColor.YELLOW + GriefPrevention.instance.dataStore.getMessage(MessageType.Build) + " " +
+                            ChatColor.GREEN + GriefPrevention.instance.dataStore.getMessage(MessageType.Containers) + " " +
+                            ChatColor.BLUE + GriefPrevention.instance.dataStore.getMessage(MessageType.Access));
 
             if (claim.getSubclaimRestrictions())
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.HasSubclaimRestriction);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.HasSubclaimRestriction);
             }
 
             return true;
@@ -581,7 +548,7 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length != 1) return false;
 
             //determine which claim the player is standing in
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
 
             //determine whether a single player or clearing permissions entirely
             boolean clearPermissions = false;
@@ -594,7 +561,7 @@ public class ChungusCommand implements CommandExecutor {
                 }
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ClearPermsOwnerOnly);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ClearPermsOwnerOnly);
                     return true;
                 }
             }
@@ -603,7 +570,7 @@ public class ChungusCommand implements CommandExecutor {
                 //validate player argument or group argument
                 if (!args[0].startsWith("[") || !args[0].endsWith("]"))
                 {
-                    otherPlayer = this.resolvePlayerByName(args[0]);
+                    otherPlayer = PlayerName.resolvePlayerByName(args[0]);
                     if (!clearPermissions && otherPlayer == null && !args[0].equals("public"))
                     {
                         //bracket any permissions - at this point it must be a permission without brackets
@@ -613,7 +580,7 @@ public class ChungusCommand implements CommandExecutor {
                         }
                         else
                         {
-                            GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                             return true;
                         }
                     }
@@ -627,7 +594,7 @@ public class ChungusCommand implements CommandExecutor {
             //if no claim here, apply changes to all his claims
             if (claim == null)
             {
-                PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+                PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
                 String idToDrop = args[0];
                 if (otherPlayer != null)
@@ -662,7 +629,7 @@ public class ChungusCommand implements CommandExecutor {
                     }
 
                     //save changes
-                    this.dataStore.saveClaim(claim);
+                    GriefPrevention.instance.dataStore.saveClaim(claim);
                 }
 
                 //beautify for output
@@ -674,18 +641,18 @@ public class ChungusCommand implements CommandExecutor {
                 //confirmation message
                 if (!clearPermissions)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Success, MessageType.UntrustIndividualAllClaims, args[0]);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.UntrustIndividualAllClaims, args[0]);
                 }
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Success, MessageType.UntrustEveryoneAllClaims);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.UntrustEveryoneAllClaims);
                 }
             }
 
             //otherwise, apply changes to only this claim
             else if (claim.checkPermission(player, ClaimPermission.Manage, null) != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoPermissionTrust, claim.getOwnerName());
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoPermissionTrust, claim.getOwnerName());
                 return true;
             }
             else
@@ -696,7 +663,7 @@ public class ChungusCommand implements CommandExecutor {
                     //requires owner
                     if (claim.checkPermission(player, ClaimPermission.Edit, null) != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, MessageType.UntrustAllOwnerOnly);
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.UntrustAllOwnerOnly);
                         return true;
                     }
 
@@ -710,7 +677,7 @@ public class ChungusCommand implements CommandExecutor {
                     }
 
                     event.getClaims().forEach(Claim::clearPermissions);
-                    GriefPrevention.sendMessage(player, TextMode.Success, MessageType.ClearPermissionsOneClaim);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.ClearPermissionsOneClaim);
                 }
 
                 //otherwise individual permission drop
@@ -724,7 +691,7 @@ public class ChungusCommand implements CommandExecutor {
                     boolean targetIsManager = claim.managers.contains(idToDrop);
                     if (targetIsManager && claim.checkPermission(player, ClaimPermission.Edit, null) != null)  //only claim owners can untrust managers
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ManagersDontUntrustManagers, claim.getOwnerName());
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ManagersDontUntrustManagers, claim.getOwnerName());
                         return true;
                     }
                     else
@@ -746,12 +713,12 @@ public class ChungusCommand implements CommandExecutor {
                             args[0] = "the public";
                         }
 
-                        GriefPrevention.sendMessage(player, TextMode.Success, MessageType.UntrustIndividualSingleClaim, args[0]);
+                        Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.UntrustIndividualSingleClaim, args[0]);
                     }
                 }
 
                 //save changes
-                this.dataStore.saveClaim(claim);
+                GriefPrevention.instance.dataStore.saveClaim(claim);
             }
 
             return true;
@@ -763,7 +730,7 @@ public class ChungusCommand implements CommandExecutor {
             //requires exactly one parameter, the other player's name
             if (args.length != 1) return false;
 
-            this.handleTrustCommand(player, ClaimPermission.Access, args[0]);
+            GriefPrevention.instance.handleTrustCommand(player, ClaimPermission.Access, args[0]);
 
             return true;
         }
@@ -774,7 +741,7 @@ public class ChungusCommand implements CommandExecutor {
             //requires exactly one parameter, the other player's name
             if (args.length != 1) return false;
 
-            this.handleTrustCommand(player, ClaimPermission.Inventory, args[0]);
+            GriefPrevention.instance.handleTrustCommand(player, ClaimPermission.Inventory, args[0]);
 
             return true;
         }
@@ -785,7 +752,7 @@ public class ChungusCommand implements CommandExecutor {
             //requires exactly one parameter, the other player's name
             if (args.length != 1) return false;
 
-            this.handleTrustCommand(player, null, args[0]);  //null indicates permissiontrust to the helper method
+            GriefPrevention.instance.handleTrustCommand(player, null, args[0]);  //null indicates permissiontrust to the helper method
 
             return true;
         }
@@ -793,11 +760,11 @@ public class ChungusCommand implements CommandExecutor {
         //restrictsubclaim
         else if (cmd.getName().equalsIgnoreCase("restrictsubclaim") && player != null)
         {
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true, playerData.lastClaim);
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true, playerData.lastClaim);
             if (claim == null || claim.parent == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.StandInSubclaim);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.StandInSubclaim);
                 return true;
             }
 
@@ -806,21 +773,21 @@ public class ChungusCommand implements CommandExecutor {
             // If not an admin claim, fail if this user is not the owner
             if (!playerData.ignoreClaims && (claim.isAdminClaim() ? !player.hasPermission("griefprevention.adminclaims") : !player.getUniqueId().equals(claim.parent.ownerID)))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.OnlyOwnersModifyClaims, claim.getOwnerName());
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.OnlyOwnersModifyClaims, claim.getOwnerName());
                 return true;
             }
 
             if (claim.getSubclaimRestrictions())
             {
                 claim.setSubclaimRestrictions(false);
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SubclaimUnrestricted);
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SubclaimUnrestricted);
             }
             else
             {
                 claim.setSubclaimRestrictions(true);
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SubclaimRestricted);
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SubclaimRestricted);
             }
-            this.dataStore.saveClaim(claim);
+            GriefPrevention.instance.dataStore.saveClaim(claim);
             return true;
         }
 
@@ -831,20 +798,20 @@ public class ChungusCommand implements CommandExecutor {
             EconomyHandler.EconomyWrapper economyWrapper = economyHandler.getWrapper();
             if (economyWrapper == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.BuySellNotConfigured);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.BuySellNotConfigured);
                 return true;
             }
 
             if (!player.hasPermission("griefprevention.buysellclaimblocks"))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoPermissionForCommand);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoPermissionForCommand);
                 return true;
             }
 
             //if purchase disabled, send error message
             if (GriefPrevention.instance.config_economy_claimBlocksPurchaseCost == 0)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.OnlySellBlocks);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.OnlySellBlocks);
                 return true;
             }
 
@@ -853,12 +820,12 @@ public class ChungusCommand implements CommandExecutor {
             //if no parameter, just tell player cost per block and balance
             if (args.length != 1)
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, MessageType.BlockPurchaseCost, String.valueOf(GriefPrevention.instance.config_economy_claimBlocksPurchaseCost), String.valueOf(economy.getBalance(player)));
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.BlockPurchaseCost, String.valueOf(GriefPrevention.instance.config_economy_claimBlocksPurchaseCost), String.valueOf(economy.getBalance(player)));
                 return false;
             }
             else
             {
-                PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+                PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
                 //try to parse number of blocks
                 int blockCount;
@@ -881,7 +848,7 @@ public class ChungusCommand implements CommandExecutor {
                 double totalCost = blockCount * GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
                 if (totalCost > balance)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.InsufficientFunds, String.valueOf(totalCost), String.valueOf(balance));
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.InsufficientFunds, String.valueOf(totalCost), String.valueOf(balance));
                 }
 
                 //otherwise carry out transaction
@@ -893,7 +860,7 @@ public class ChungusCommand implements CommandExecutor {
                     int bonusBlocksLimit = GriefPrevention.instance.config_economy_claimBlocksMaxBonus;
                     if (bonusBlocksLimit != 0 && newBonusClaimBlocks > bonusBlocksLimit)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, MessageType.MaxBonusReached, String.valueOf(blockCount), String.valueOf(bonusBlocksLimit));
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.MaxBonusReached, String.valueOf(blockCount), String.valueOf(bonusBlocksLimit));
                         return true;
                     }
 
@@ -902,10 +869,10 @@ public class ChungusCommand implements CommandExecutor {
 
                     //add blocks
                     playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() + blockCount);
-                    this.dataStore.savePlayerData(player.getUniqueId(), playerData);
+                    GriefPrevention.instance.dataStore.savePlayerData(player.getUniqueId(), playerData);
 
                     //inform player
-                    GriefPrevention.sendMessage(player, TextMode.Success, MessageType.PurchaseConfirmation, String.valueOf(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.PurchaseConfirmation, String.valueOf(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
                 }
 
                 return true;
@@ -919,31 +886,31 @@ public class ChungusCommand implements CommandExecutor {
             EconomyHandler.EconomyWrapper economyWrapper = economyHandler.getWrapper();
             if (economyWrapper == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.BuySellNotConfigured);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.BuySellNotConfigured);
                 return true;
             }
 
             if (!player.hasPermission("griefprevention.buysellclaimblocks"))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoPermissionForCommand);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoPermissionForCommand);
                 return true;
             }
 
             //if disabled, error message
             if (GriefPrevention.instance.config_economy_claimBlocksSellValue == 0)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.OnlyPurchaseBlocks);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.OnlyPurchaseBlocks);
                 return true;
             }
 
             //load player data
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             int availableBlocks = playerData.getRemainingClaimBlocks();
 
             //if no amount provided, just tell player value per block sold, and how many he can sell
             if (args.length != 1)
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, MessageType.BlockSaleValue, String.valueOf(GriefPrevention.instance.config_economy_claimBlocksSellValue), String.valueOf(availableBlocks));
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.BlockSaleValue, String.valueOf(GriefPrevention.instance.config_economy_claimBlocksSellValue), String.valueOf(availableBlocks));
                 return false;
             }
 
@@ -966,7 +933,7 @@ public class ChungusCommand implements CommandExecutor {
             //if he doesn't have enough blocks, tell him so
             if (blockCount > availableBlocks)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NotEnoughBlocksForSale);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NotEnoughBlocksForSale);
             }
 
             //otherwise carry out the transaction
@@ -978,10 +945,10 @@ public class ChungusCommand implements CommandExecutor {
 
                 //subtract blocks
                 playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() - blockCount);
-                this.dataStore.savePlayerData(player.getUniqueId(), playerData);
+                GriefPrevention.instance.dataStore.savePlayerData(player.getUniqueId(), playerData);
 
                 //inform player
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.BlockSaleConfirmation, String.valueOf(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.BlockSaleConfirmation, String.valueOf(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
             }
 
             return true;
@@ -990,9 +957,9 @@ public class ChungusCommand implements CommandExecutor {
         //adminclaims
         else if (cmd.getName().equalsIgnoreCase("adminclaims") && player != null)
         {
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             playerData.shovelMode = ShovelMode.Admin;
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.AdminClaimsMode);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AdminClaimsMode);
 
             return true;
         }
@@ -1000,10 +967,10 @@ public class ChungusCommand implements CommandExecutor {
         //basicclaims
         else if (cmd.getName().equalsIgnoreCase("basicclaims") && player != null)
         {
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             playerData.shovelMode = ShovelMode.Basic;
             playerData.claimSubdividing = null;
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.BasicClaimsMode);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.BasicClaimsMode);
 
             return true;
         }
@@ -1011,11 +978,11 @@ public class ChungusCommand implements CommandExecutor {
         //subdivideclaims
         else if (cmd.getName().equalsIgnoreCase("subdivideclaims") && player != null)
         {
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             playerData.shovelMode = ShovelMode.Subdivide;
             playerData.claimSubdividing = null;
-            GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.SubdivisionMode);
-            GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.SubdivisionVideo2, DataStore.SUBDIVISION_VIDEO_URL);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SubdivisionMode);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SubdivisionVideo2, DataStore.SUBDIVISION_VIDEO_URL);
 
             return true;
         }
@@ -1024,46 +991,34 @@ public class ChungusCommand implements CommandExecutor {
         else if (cmd.getName().equalsIgnoreCase("deleteclaim") && player != null)
         {
             //determine which claim the player is standing in
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
 
             if (claim == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.DeleteClaimMissing);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.DeleteClaimMissing);
             }
             else
             {
                 //deleting an admin claim additionally requires the adminclaims permission
-                if (!claim.isAdminClaim() || player.hasPermission("griefprevention.adminclaims"))
-                {
-                    PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                    if (claim.children.size() > 0 && !playerData.warnedAboutMajorDeletion)
-                    {
-                        GriefPrevention.sendMessage(player, TextMode.Warn, MessageType.DeletionSubdivisionWarning);
+                if (!claim.isAdminClaim() || player.hasPermission("griefprevention.adminclaims")) {
+                    PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
+                    if (claim.children.size() > 0 && !playerData.warnedAboutMajorDeletion) {
+                        Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.DeletionSubdivisionWarning);
                         playerData.warnedAboutMajorDeletion = true;
                     }
-                    else
-                    {
+                    else {
                         claim.removeSurfaceFluids(null);
-                        this.dataStore.deleteClaim(claim, true, true);
-
-                        //if in a creative mode world, /restorenature the claim
-                        if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()) || GriefPrevention.instance.config_claims_survivalAutoNatureRestoration)
-                        {
-                            GriefPrevention.instance.restoreClaim(claim, 0);
-                        }
-
-                        GriefPrevention.sendMessage(player, TextMode.Success, MessageType.DeleteSuccess);
-                        GriefPrevention.AddLogEntry(player.getName() + " deleted " + claim.getOwnerName() + "'s claim at " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
-
+                        GriefPrevention.instance.dataStore.deleteClaim(claim, true, true);
+                        Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.DeleteSuccess);
+                        GriefPrevention.AddLogEntry(player.getName() + " deleted " + claim.getOwnerName() + "'s claim at " + getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
                         //revert any current visualization
                         playerData.setVisibleBoundaries(null);
-
                         playerData.warnedAboutMajorDeletion = false;
                     }
                 }
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.CantDeleteAdminClaim);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CantDeleteAdminClaim);
                 }
             }
 
@@ -1072,30 +1027,30 @@ public class ChungusCommand implements CommandExecutor {
         else if (cmd.getName().equalsIgnoreCase("claimexplosions") && player != null)
         {
             //determine which claim the player is standing in
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
 
             if (claim == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.DeleteClaimMissing);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.DeleteClaimMissing);
             }
             else
             {
                 Supplier<String> noBuildReason = claim.checkPermission(player, ClaimPermission.Build, null);
                 if (noBuildReason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason.get());
                     return true;
                 }
 
                 if (claim.areExplosivesAllowed)
                 {
                     claim.areExplosivesAllowed = false;
-                    GriefPrevention.sendMessage(player, TextMode.Success, MessageType.ExplosivesDisabled);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.ExplosivesDisabled);
                 }
                 else
                 {
                     claim.areExplosivesAllowed = true;
-                    GriefPrevention.sendMessage(player, TextMode.Success, MessageType.ExplosivesEnabled);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.ExplosivesEnabled);
                 }
             }
 
@@ -1109,17 +1064,17 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length != 1) return false;
 
             //try to find that player
-            OfflinePlayer otherPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer otherPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (otherPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
             //delete all that player's claims
-            this.dataStore.deleteClaimsForPlayer(otherPlayer.getUniqueId(), true);
+            GriefPrevention.instance.dataStore.deleteClaimsForPlayer(otherPlayer.getUniqueId(), true);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.DeleteAllSuccess, otherPlayer.getName());
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.DeleteAllSuccess, otherPlayer.getName());
             if (player != null)
             {
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all claims belonging to " + otherPlayer.getName() + ".", CustomLogEntryTypes.AdminActivity);
@@ -1127,7 +1082,7 @@ public class ChungusCommand implements CommandExecutor {
                 //revert any current visualization
                 if (player.isOnline())
                 {
-                    this.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
+                    GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
                 }
             }
 
@@ -1138,7 +1093,7 @@ public class ChungusCommand implements CommandExecutor {
             //must be executed at the console
             if (player != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ConsoleOnlyCommand);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ConsoleOnlyCommand);
                 return true;
             }
 
@@ -1149,12 +1104,12 @@ public class ChungusCommand implements CommandExecutor {
             World world = Bukkit.getServer().getWorld(args[0]);
             if (world == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.WorldNotFound);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.WorldNotFound);
                 return true;
             }
 
             //delete all claims in that world
-            this.dataStore.deleteClaimsInWorld(world, true);
+            GriefPrevention.instance.dataStore.deleteClaimsInWorld(world, true);
             GriefPrevention.AddLogEntry("Deleted all claims in world: " + world.getName() + ".", CustomLogEntryTypes.AdminActivity);
             return true;
         }
@@ -1163,7 +1118,7 @@ public class ChungusCommand implements CommandExecutor {
             //must be executed at the console
             if (player != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ConsoleOnlyCommand);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ConsoleOnlyCommand);
                 return true;
             }
 
@@ -1174,12 +1129,12 @@ public class ChungusCommand implements CommandExecutor {
             World world = Bukkit.getServer().getWorld(args[0]);
             if (world == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.WorldNotFound);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.WorldNotFound);
                 return true;
             }
 
             //delete all USER claims in that world
-            this.dataStore.deleteClaimsInWorld(world, false);
+            GriefPrevention.instance.dataStore.deleteClaimsInWorld(world, false);
             GriefPrevention.AddLogEntry("Deleted all user claims in world: " + world.getName() + ".", CustomLogEntryTypes.AdminActivity);
             return true;
         }
@@ -1191,10 +1146,10 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length != 1) return false;
 
             //try to find the specified player
-            Player otherPlayer = this.getServer().getPlayer(args[0]);
+            Player otherPlayer = GriefPrevention.instance.getServer().getPlayer(args[0]);
             if (otherPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
             else
@@ -1226,43 +1181,43 @@ public class ChungusCommand implements CommandExecutor {
             //otherwise if no permission to delve into another player's claims data
             else if (player != null && !player.hasPermission("griefprevention.claimslistother"))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.ClaimsListNoPermission);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ClaimsListNoPermission);
                 return true;
             }
 
             //otherwise try to find the specified player
             else
             {
-                otherPlayer = this.resolvePlayerByName(args[0]);
+                otherPlayer = PlayerName.resolvePlayerByName(args[0]);
                 if (otherPlayer == null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                     return true;
                 }
             }
 
             //load the target player's data
-            PlayerData playerData = this.dataStore.getPlayerData(otherPlayer.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(otherPlayer.getUniqueId());
             Vector<Claim> claims = playerData.getClaims();
-            GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.StartBlockMath,
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.StartBlockMath,
                     String.valueOf(playerData.getAccruedClaimBlocks()),
-                    String.valueOf((playerData.getBonusClaimBlocks() + this.dataStore.getGroupBonusBlocks(otherPlayer.getUniqueId()))),
-                    String.valueOf((playerData.getAccruedClaimBlocks() + playerData.getBonusClaimBlocks() + this.dataStore.getGroupBonusBlocks(otherPlayer.getUniqueId()))));
+                    String.valueOf((playerData.getBonusClaimBlocks() + GriefPrevention.instance.dataStore.getGroupBonusBlocks(otherPlayer.getUniqueId()))),
+                    String.valueOf((playerData.getAccruedClaimBlocks() + playerData.getBonusClaimBlocks() + GriefPrevention.instance.dataStore.getGroupBonusBlocks(otherPlayer.getUniqueId()))));
             if (claims.size() > 0)
             {
-                GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.ClaimsListHeader);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.ClaimsListHeader);
                 for (int i = 0; i < playerData.getClaims().size(); i++)
                 {
                     Claim claim = playerData.getClaims().get(i);
-                    GriefPrevention.sendMessage(player, TextMode.Instr, getfriendlyLocationString(claim.getLesserBoundaryCorner()) + this.dataStore.getMessage(MessageType.ContinueBlockMath, String.valueOf(claim.getArea())));
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), getfriendlyLocationString(claim.getLesserBoundaryCorner()) + GriefPrevention.instance.dataStore.getMessage(MessageType.ContinueBlockMath, String.valueOf(claim.getArea())));
                 }
 
-                GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.EndBlockMath, String.valueOf(playerData.getRemainingClaimBlocks()));
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.EndBlockMath, String.valueOf(playerData.getRemainingClaimBlocks()));
             }
 
             //drop the data we just loaded, if the player isn't online
             if (!otherPlayer.isOnline())
-                this.dataStore.clearCachedPlayerData(otherPlayer.getUniqueId());
+                GriefPrevention.instance.dataStore.clearCachedPlayerData(otherPlayer.getUniqueId());
 
             return true;
         }
@@ -1272,7 +1227,7 @@ public class ChungusCommand implements CommandExecutor {
         {
             //find admin claims
             Vector<Claim> claims = new Vector<>();
-            for (Claim claim : this.dataStore.claims)
+            for (Claim claim : GriefPrevention.instance.dataStore.claims)
             {
                 if (claim.ownerID == null)  //admin claim
                 {
@@ -1281,10 +1236,10 @@ public class ChungusCommand implements CommandExecutor {
             }
             if (claims.size() > 0)
             {
-                GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.ClaimsListHeader);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.ClaimsListHeader);
                 for (Claim claim : claims)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, getfriendlyLocationString(claim.getLesserBoundaryCorner()));
+                    Messages.sendMessage(player, TextMode.Instr.getColor(), getfriendlyLocationString(claim.getLesserBoundaryCorner()));
                 }
             }
 
@@ -1301,17 +1256,17 @@ public class ChungusCommand implements CommandExecutor {
                 Player otherPlayer = Bukkit.getPlayer(args[0]);
                 if (otherPlayer == null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                     return true;
                 }
 
-                playerData = this.dataStore.getPlayerData(otherPlayer.getUniqueId());
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.DropUnlockOthersConfirmation, otherPlayer.getName());
+                playerData = GriefPrevention.instance.dataStore.getPlayerData(otherPlayer.getUniqueId());
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.DropUnlockOthersConfirmation, otherPlayer.getName());
             }
             else
             {
-                playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.DropUnlockConfirmation);
+                playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.DropUnlockConfirmation);
             }
 
             playerData.dropsAreUnlocked = true;
@@ -1324,20 +1279,20 @@ public class ChungusCommand implements CommandExecutor {
         {
             if (!player.hasPermission("griefprevention.deleteclaims"))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoDeletePermission);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoDeletePermission);
                 return true;
             }
 
             //delete all admin claims
-            this.dataStore.deleteClaimsForPlayer(null, true);  //null for owner id indicates an administrative claim
+            GriefPrevention.instance.dataStore.deleteClaimsForPlayer(null, true);  //null for owner id indicates an administrative claim
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.AllAdminDeleted);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AllAdminDeleted);
             if (player != null)
             {
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all administrative claims.", CustomLogEntryTypes.AdminActivity);
 
                 //revert any current visualization
-                this.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
+                GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
             }
 
             return true;
@@ -1364,9 +1319,9 @@ public class ChungusCommand implements CommandExecutor {
             if (args[0].startsWith("[") && args[0].endsWith("]"))
             {
                 String permissionIdentifier = args[0].substring(1, args[0].length() - 1);
-                int newTotal = this.dataStore.adjustGroupBonusBlocks(permissionIdentifier, adjustment);
+                int newTotal = GriefPrevention.instance.dataStore.adjustGroupBonusBlocks(permissionIdentifier, adjustment);
 
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.AdjustGroupBlocksSuccess, permissionIdentifier, String.valueOf(adjustment), String.valueOf(newTotal));
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AdjustGroupBlocksSuccess, permissionIdentifier, String.valueOf(adjustment), String.valueOf(newTotal));
                 if (player != null)
                     GriefPrevention.AddLogEntry(player.getName() + " adjusted " + permissionIdentifier + "'s bonus claim blocks by " + adjustment + ".");
 
@@ -1378,26 +1333,26 @@ public class ChungusCommand implements CommandExecutor {
             try
             {
                 UUID playerID = UUID.fromString(args[0]);
-                targetPlayer = this.getServer().getOfflinePlayer(playerID);
+                targetPlayer = GriefPrevention.instance.getServer().getOfflinePlayer(playerID);
 
             }
             catch (IllegalArgumentException e)
             {
-                targetPlayer = this.resolvePlayerByName(args[0]);
+                targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             }
 
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
             //give blocks to player
-            PlayerData playerData = this.dataStore.getPlayerData(targetPlayer.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(targetPlayer.getUniqueId());
             playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() + adjustment);
-            this.dataStore.savePlayerData(targetPlayer.getUniqueId(), playerData);
+            GriefPrevention.instance.dataStore.savePlayerData(targetPlayer.getUniqueId(), playerData);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.AdjustBlocksSuccess, targetPlayer.getName(), String.valueOf(adjustment), String.valueOf(playerData.getBonusClaimBlocks()));
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AdjustBlocksSuccess, targetPlayer.getName(), String.valueOf(adjustment), String.valueOf(playerData.getBonusClaimBlocks()));
             if (player != null)
                 GriefPrevention.AddLogEntry(player.getName() + " adjusted " + targetPlayer.getName() + "'s bonus claim blocks by " + adjustment + ".", CustomLogEntryTypes.AdminActivity);
 
@@ -1423,18 +1378,18 @@ public class ChungusCommand implements CommandExecutor {
 
             //for each online player
             @SuppressWarnings("unchecked")
-            Collection<Player> players = (Collection<Player>) this.getServer().getOnlinePlayers();
+            Collection<Player> players = (Collection<Player>) GriefPrevention.instance.getServer().getOnlinePlayers();
             StringBuilder builder = new StringBuilder();
             for (Player onlinePlayer : players)
             {
                 UUID playerID = onlinePlayer.getUniqueId();
-                PlayerData playerData = this.dataStore.getPlayerData(playerID);
+                PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(playerID);
                 playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() + adjustment);
-                this.dataStore.savePlayerData(playerID, playerData);
+                GriefPrevention.instance.dataStore.savePlayerData(playerID, playerData);
                 builder.append(onlinePlayer.getName()).append(' ');
             }
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.AdjustBlocksAllSuccess, String.valueOf(adjustment));
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AdjustBlocksAllSuccess, String.valueOf(adjustment));
             GriefPrevention.AddLogEntry("Adjusted all " + players.size() + "players' bonus claim blocks by " + adjustment + ".  " + builder.toString(), CustomLogEntryTypes.AdminActivity);
 
             return true;
@@ -1458,225 +1413,43 @@ public class ChungusCommand implements CommandExecutor {
             }
 
             //find the specified player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
             //set player's blocks
-            PlayerData playerData = this.dataStore.getPlayerData(targetPlayer.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(targetPlayer.getUniqueId());
             playerData.setAccruedClaimBlocks(newAmount);
-            this.dataStore.savePlayerData(targetPlayer.getUniqueId(), playerData);
+            GriefPrevention.instance.dataStore.savePlayerData(targetPlayer.getUniqueId(), playerData);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SetClaimBlocksSuccess);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SetClaimBlocksSuccess);
             if (player != null)
                 GriefPrevention.AddLogEntry(player.getName() + " set " + targetPlayer.getName() + "'s accrued claim blocks to " + newAmount + ".", CustomLogEntryTypes.AdminActivity);
 
             return true;
         }
 
-        //trapped
-        else if (cmd.getName().equalsIgnoreCase("trapped") && player != null)
-        {
-            //FEATURE: empower players who get "stuck" in an area where they don't have permission to build to save themselves
-
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            Claim claim = this.dataStore.getClaimAt(player.getLocation(), false, playerData.lastClaim);
-
-            //if another /trapped is pending, ignore this slash command
-            if (playerData.pendingTrapped)
-            {
-                return true;
-            }
-
-            //if the player isn't in a claim or has permission to build, tell him to man up
-            if (claim == null || claim.checkPermission(player, ClaimPermission.Build, null) == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NotTrappedHere);
-                return true;
-            }
-
-            //rescue destination may be set by GPFlags or other plugin, ask to find out
-            SaveTrappedPlayerEvent event = new SaveTrappedPlayerEvent(claim);
-            Bukkit.getPluginManager().callEvent(event);
-
-            //if the player is in the nether or end, he's screwed (there's no way to programmatically find a safe place for him)
-            if (player.getWorld().getEnvironment() != World.Environment.NORMAL && event.getDestination() == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.TrappedWontWorkHere);
-                return true;
-            }
-
-            //if the player is in an administrative claim and AllowTrappedInAdminClaims is false, he should contact an admin
-            if (!GriefPrevention.instance.config_claims_allowTrappedInAdminClaims && claim.isAdminClaim() && event.getDestination() == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.TrappedWontWorkHere);
-                return true;
-            }
-            //send instructions
-            GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.RescuePending);
-
-            //create a task to rescue this player in a little while
-            PlayerRescueTask task = new PlayerRescueTask(player, player.getLocation(), event.getDestination());
-            this.getServer().getScheduler().scheduleSyncDelayedTask(this, task, 200L);  //20L ~ 1 second
-
-            return true;
-        }
-
-        //siege
-        else if (cmd.getName().equalsIgnoreCase("siege") && player != null)
-        {
-            //error message for when siege mode is disabled
-            if (!this.siegeEnabledForWorld(player.getWorld()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NonSiegeWorld);
-                return true;
-            }
-
-            //requires one argument
-            if (args.length > 1)
-            {
-                return false;
-            }
-
-            //can't start a siege when you're already involved in one
-            Player attacker = player;
-            PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
-//            if (attackerData.siegeData != null)
-//            {
-//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadySieging);
-//                return true;
-//            }
-
-            //can't start a siege when you're protected from pvp combat
-            if (attackerData.pvpImmune)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.CantFightWhileImmune);
-                return true;
-            }
-
-            //if a player name was specified, use that
-            Player defender = null;
-            if (args.length >= 1)
-            {
-                defender = this.getServer().getPlayer(args[0]);
-                if (defender == null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
-                    return true;
-                }
-            }
-
-            //otherwise use the last player this player was in pvp combat with
-            else if (attackerData.lastPvpPlayer.length() > 0)
-            {
-                defender = this.getServer().getPlayer(attackerData.lastPvpPlayer);
-                if (defender == null)
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
-
-            // First off, you cannot siege yourself, that's just
-            // silly:
-            if (attacker.getName().equals(defender.getName()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoSiegeYourself);
-                return true;
-            }
-
-            //victim must not have the permission which makes him immune to siege
-            if (defender.hasPermission("griefprevention.siegeimmune"))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.SiegeImmune);
-                return true;
-            }
-
-            //victim must not be under siege already
-            PlayerData defenderData = this.dataStore.getPlayerData(defender.getUniqueId());
-//            if (defenderData.siegeData != null)
-//            {
-//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadyUnderSiegePlayer);
-//                return true;
-//            }
-
-            //victim must not be pvp immune
-            if (defenderData.pvpImmune)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoSiegeDefenseless);
-                return true;
-            }
-
-            Claim defenderClaim = this.dataStore.getClaimAt(defender.getLocation(), false, null);
-
-            //defender must have some level of permission there to be protected
-            if (defenderClaim == null || defenderClaim.checkPermission(defender, ClaimPermission.Access, null) != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NotSiegableThere);
-                return true;
-            }
-
-            //attacker must be close to the claim he wants to siege
-            if (!defenderClaim.isNear(attacker.getLocation(), 25))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.SiegeTooFarAway);
-                return true;
-            }
-
-            //claim can't be under siege already
-//            if (defenderClaim.siegeData != null)
-//            {
-//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.AlreadyUnderSiegeArea);
-//                return true;
-//            }
-
-            //can't siege admin claims
-            if (defenderClaim.isAdminClaim())
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NoSiegeAdminClaim);
-                return true;
-            }
-
-//            //can't be on cooldown
-//            if (dataStore.onCooldown(attacker, defender, defenderClaim))
-//            {
-//                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeOnCooldown);
-//                return true;
-//            }
-//
-//            //start the siege
-//            dataStore.startSiege(attacker, defender, defenderClaim);
-
-            //confirmation message for attacker, warning message for defender
-            GriefPrevention.sendMessage(defender, TextMode.Warn, MessageType.SiegeAlert, attacker.getName());
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SiegeConfirmed, defender.getName());
-
-            return true;
-        }
         else if (cmd.getName().equalsIgnoreCase("softmute"))
         {
             //requires one parameter
             if (args.length != 1) return false;
 
             //find the specified player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
             //toggle mute for player
-            boolean isMuted = this.dataStore.toggleSoftMute(targetPlayer.getUniqueId());
+            boolean isMuted = GriefPrevention.instance.dataStore.toggleSoftMute(targetPlayer.getUniqueId());
             if (isMuted)
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SoftMuted, targetPlayer.getName());
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SoftMuted, targetPlayer.getName());
                 String executorName = "console";
                 if (player != null)
                 {
@@ -1687,19 +1460,19 @@ public class ChungusCommand implements CommandExecutor {
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.UnSoftMuted, targetPlayer.getName());
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.UnSoftMuted, targetPlayer.getName());
             }
 
             return true;
         }
         else if (cmd.getName().equalsIgnoreCase("gpreload"))
         {
-            this.loadConfig();
-            this.dataStore.loadMessages();
+            GriefPrevention.instance.loadConfig();
+            GriefPrevention.instance.dataStore.loadMessages();
             playerEventHandler.resetPattern();
             if (player != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, "Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
+                Messages.sendMessage(player, TextMode.Success.getColor(), "Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
             }
             else
             {
@@ -1715,21 +1488,21 @@ public class ChungusCommand implements CommandExecutor {
             //requires one parameter
             if (args.length < 1) return false;
 
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
             //special case: cancellation
             if (args[0].equalsIgnoreCase("cancel"))
             {
                 playerData.petGiveawayRecipient = null;
-                GriefPrevention.sendMessage(player, TextMode.Success, MessageType.PetTransferCancellation);
+                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.PetTransferCancellation);
                 return true;
             }
 
             //find the specified player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
@@ -1737,7 +1510,7 @@ public class ChungusCommand implements CommandExecutor {
             playerData.petGiveawayRecipient = targetPlayer;
 
             //send instructions
-            GriefPrevention.sendMessage(player, TextMode.Instr, MessageType.ReadyToTransferPet);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.ReadyToTransferPet);
 
             return true;
         }
@@ -1762,16 +1535,16 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length < 1) return false;
 
             //validate target player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
-            this.setIgnoreStatus(player, targetPlayer, GriefPrevention.IgnoreMode.StandardIgnore);
+            GriefPrevention.instance.setIgnoreStatus(player, targetPlayer, GriefPrevention.IgnoreMode.StandardIgnore);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.IgnoreConfirmation);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.IgnoreConfirmation);
 
             return true;
         }
@@ -1783,24 +1556,24 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length < 1) return false;
 
             //validate target player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             Boolean ignoreStatus = playerData.ignoredPlayers.get(targetPlayer.getUniqueId());
             if (ignoreStatus == null || ignoreStatus == true)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.NotIgnoringPlayer);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NotIgnoringPlayer);
                 return true;
             }
 
-            this.setIgnoreStatus(player, targetPlayer, GriefPrevention.IgnoreMode.None);
+            GriefPrevention.instance.setIgnoreStatus(player, targetPlayer, GriefPrevention.IgnoreMode.None);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.UnIgnoreConfirmation);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.UnIgnoreConfirmation);
 
             return true;
         }
@@ -1808,7 +1581,7 @@ public class ChungusCommand implements CommandExecutor {
         //ignoredplayerlist
         else if (cmd.getName().equalsIgnoreCase("ignoredplayerlist") && player != null)
         {
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
             StringBuilder builder = new StringBuilder();
             for (Map.Entry<UUID, Boolean> entry : playerData.ignoredPlayers.entrySet())
             {
@@ -1817,7 +1590,7 @@ public class ChungusCommand implements CommandExecutor {
                     //if not an admin ignore, add it to the list
                     if (!entry.getValue())
                     {
-                        builder.append(GriefPrevention.lookupPlayerName(entry.getKey()));
+                        builder.append(PlayerName.lookupPlayerName(entry.getKey()));
                         builder.append(" ");
                     }
                 }
@@ -1826,11 +1599,11 @@ public class ChungusCommand implements CommandExecutor {
             String list = builder.toString().trim();
             if (list.isEmpty())
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, MessageType.NotIgnoringAnyone);
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.NotIgnoringAnyone);
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, list);
+                Messages.sendMessage(player, TextMode.Info.getColor(), list);
             }
 
             return true;
@@ -1843,23 +1616,23 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length < 2) return false;
 
             //validate target players
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
-            OfflinePlayer targetPlayer2 = this.resolvePlayerByName(args[1]);
+            OfflinePlayer targetPlayer2 = PlayerName.resolvePlayerByName(args[1]);
             if (targetPlayer2 == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
-            this.setIgnoreStatus(targetPlayer, targetPlayer2, GriefPrevention.IgnoreMode.AdminIgnore);
+            GriefPrevention.instance.setIgnoreStatus(targetPlayer, targetPlayer2, GriefPrevention.IgnoreMode.AdminIgnore);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.SeparateConfirmation);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SeparateConfirmation);
 
             return true;
         }
@@ -1871,24 +1644,24 @@ public class ChungusCommand implements CommandExecutor {
             if (args.length < 2) return false;
 
             //validate target players
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+            OfflinePlayer targetPlayer = PlayerName.resolvePlayerByName(args[0]);
             if (targetPlayer == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
-            OfflinePlayer targetPlayer2 = this.resolvePlayerByName(args[1]);
+            OfflinePlayer targetPlayer2 = PlayerName.resolvePlayerByName(args[1]);
             if (targetPlayer2 == null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return true;
             }
 
-            this.setIgnoreStatus(targetPlayer, targetPlayer2, GriefPrevention.IgnoreMode.None);
-            this.setIgnoreStatus(targetPlayer2, targetPlayer, GriefPrevention.IgnoreMode.None);
+            GriefPrevention.instance.setIgnoreStatus(targetPlayer, targetPlayer2, GriefPrevention.IgnoreMode.None);
+            GriefPrevention.instance.setIgnoreStatus(targetPlayer2, targetPlayer, GriefPrevention.IgnoreMode.None);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, MessageType.UnSeparateConfirmation);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.UnSeparateConfirmation);
 
             return true;
         }
