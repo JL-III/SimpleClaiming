@@ -3217,18 +3217,15 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //helper method to resolve a player name from the player's UUID
-    static @NotNull String lookupPlayerName(@Nullable UUID playerID)
-    {
+    static @NotNull String lookupPlayerName(@Nullable UUID playerID) {
         //parameter validation
         if (playerID == null) return "someone";
-
         //check the cache
         OfflinePlayer player = GriefPrevention.instance.getServer().getOfflinePlayer(playerID);
         return lookupPlayerName(player);
     }
 
-    static @NotNull String lookupPlayerName(@NotNull AnimalTamer tamer)
-    {
+    static @NotNull String lookupPlayerName(@NotNull AnimalTamer tamer) {
         // If the tamer is not a player or has played, prefer their name if it exists.
         if (!(tamer instanceof OfflinePlayer player) || player.hasPlayedBefore() || player.isOnline())
         {

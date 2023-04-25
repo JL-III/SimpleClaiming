@@ -18,8 +18,7 @@ public class WordFinder {
         }
 
         String patternString = patternBuilder.toString();
-        if (patternString.length() > 1)
-        {
+        if (patternString.length() > 1) {
             //trim extraneous leading pipe (|)
             patternString = patternString.substring(1);
         }
@@ -29,10 +28,8 @@ public class WordFinder {
         this.pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     }
 
-    public boolean hasMatch(String input)
-    {
+    public boolean hasMatch(String input) {
         if (this.pattern == null) return false;
-
         Matcher matcher = this.pattern.matcher(input);
         return matcher.find();
     }

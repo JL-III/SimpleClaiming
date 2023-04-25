@@ -2,8 +2,7 @@ package me.ryanhamshire.GriefPrevention.chat;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class ChatterData
-{
+class ChatterData {
     public String lastMessage = "";                 //the player's last chat message, or slash command complete with parameters
     public long lastMessageTimestamp;               //last time the player sent a chat message or used a monitored slash command
     public int spamLevel = 0;                       //number of consecutive "spams"
