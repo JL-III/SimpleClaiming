@@ -18,7 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention.enums;
 
-public enum Messages {
+public enum MessageType {
     RespectingClaims,
     IgnoringClaims,
     SuccessfulAbandon,

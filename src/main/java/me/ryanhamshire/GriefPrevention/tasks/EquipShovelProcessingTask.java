@@ -24,7 +24,7 @@ import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
@@ -56,19 +56,19 @@ public class EquipShovelProcessingTask implements Runnable {
         //always reset to basic claims mode
         if (playerData.shovelMode != ShovelMode.Basic) {
             playerData.shovelMode = ShovelMode.Basic;
-            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), Messages.ShovelBasicClaimMode);
+            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), MessageType.ShovelBasicClaimMode);
         }
 
         //tell him how many claim blocks he has available
         int remainingBlocks = playerData.getRemainingClaimBlocks();
-        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.RemainingBlocks, String.valueOf(remainingBlocks));
+        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.RemainingBlocks, String.valueOf(remainingBlocks));
 
         //link to a video demo of land claiming, based on world type
         if (GriefPrevention.instance.creativeRulesApply(player.getLocation())) {
-            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
         }
         else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld())) {
-            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
         }
 
         //if standing in a claim owned by the player, visualize it

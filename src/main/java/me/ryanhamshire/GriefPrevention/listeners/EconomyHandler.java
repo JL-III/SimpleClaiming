@@ -62,25 +62,21 @@ public class EconomyHandler implements Listener {
      *
      * @param setupState the expected setup state
      */
-    private void loadEconomy(boolean setupState)
-    {
+    private void loadEconomy(boolean setupState) {
         // If no change is likely, have we already obtained the Economy?
         if (setupState != setupDone) return;
 
         // Are we configured to allow transactions?
-        if (!(instance.config_economy_claimBlocksPurchaseCost > 0 || instance.config_economy_claimBlocksSellValue > 0))
-        {
+        if (!(instance.config_economy_claimBlocksPurchaseCost > 0 || instance.config_economy_claimBlocksSellValue > 0)) {
             finishSetup(false, null);
             return;
         }
 
         // Ensure Vault present.
-        try
-        {
+        try {
             Class.forName("net.milkbowl.vault.economy.Economy");
         }
-        catch (ClassNotFoundException e)
-        {
+        catch (ClassNotFoundException e) {
             finishSetup(false, "ERROR: GriefPrevention requires Vault for economy integration.");
             return;
         }
@@ -88,8 +84,7 @@ public class EconomyHandler implements Listener {
         RegisteredServiceProvider<Economy> registration = instance.getServer().getServicesManager().getRegistration(Economy.class);
 
         // Ensure an Economy is available.
-        if (registration == null)
-        {
+        if (registration == null) {
             finishSetup(false, "ERROR: Vault was unable to find a supported economy plugin.  Either install a Vault-compatible economy plugin, or set both of the economy config variables to zero.");
             return;
         }
@@ -118,8 +113,7 @@ public class EconomyHandler implements Listener {
      * Wrapper class used to prevent Bukkit from logging an error and
      * preventing registering events for the listener when Vault is not loaded.
      */
-    public static class EconomyWrapper
-    {
+    public static class EconomyWrapper {
 
         private final Economy economy;
 

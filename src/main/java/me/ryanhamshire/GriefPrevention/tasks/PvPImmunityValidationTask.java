@@ -19,7 +19,7 @@
 package me.ryanhamshire.GriefPrevention.tasks;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.entity.Player;
@@ -45,7 +45,7 @@ public class PvPImmunityValidationTask implements Runnable {
         if (!GriefPrevention.isInventoryEmpty(player)) {
             //if found, cancel invulnerability and notify
             playerData.pvpImmune = false;
-            GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), Messages.PvPImmunityEnd);
+            GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), MessageType.PvPImmunityEnd);
         }
         else {
             //otherwise check again in one minute

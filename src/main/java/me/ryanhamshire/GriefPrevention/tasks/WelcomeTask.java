@@ -2,7 +2,7 @@ package me.ryanhamshire.GriefPrevention.tasks;
 
 import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -25,8 +25,8 @@ public class WelcomeTask implements Runnable {
         if (!this.player.isOnline()) return;
 
         //offer advice and a helpful link
-        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.AvoidGriefClaimLand);
-        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.AvoidGriefClaimLand);
+        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), MessageType.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
 
         //give the player a reference book for later
         if (GriefPrevention.instance.config_claims_supplyPlayerManual) {
@@ -34,24 +34,24 @@ public class WelcomeTask implements Runnable {
             BookMeta meta = (BookMeta) factory.getItemMeta(Material.WRITTEN_BOOK);
 
             DataStore datastore = GriefPrevention.instance.dataStore;
-            meta.setAuthor(datastore.getMessage(Messages.BookAuthor));
-            meta.setTitle(datastore.getMessage(Messages.BookTitle));
+            meta.setAuthor(datastore.getMessage(MessageType.BookAuthor));
+            meta.setTitle(datastore.getMessage(MessageType.BookTitle));
 
             StringBuilder page1 = new StringBuilder();
-            String URL = datastore.getMessage(Messages.BookLink, DataStore.SURVIVAL_VIDEO_URL);
-            String intro = datastore.getMessage(Messages.BookIntro);
+            String URL = datastore.getMessage(MessageType.BookLink, DataStore.SURVIVAL_VIDEO_URL);
+            String intro = datastore.getMessage(MessageType.BookIntro);
 
             page1.append(URL).append("\n\n");
             page1.append(intro).append("\n\n");
             String editToolName = GriefPrevention.instance.config_claims_modificationTool.name().replace('_', ' ').toLowerCase();
             String infoToolName = GriefPrevention.instance.config_claims_investigationTool.name().replace('_', ' ').toLowerCase();
-            String configClaimTools = datastore.getMessage(Messages.BookTools, editToolName, infoToolName);
+            String configClaimTools = datastore.getMessage(MessageType.BookTools, editToolName, infoToolName);
             page1.append(configClaimTools);
             if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius < 0) {
-                page1.append(datastore.getMessage(Messages.BookDisabledChestClaims));
+                page1.append(datastore.getMessage(MessageType.BookDisabledChestClaims));
             }
 
-            StringBuilder page2 = new StringBuilder(datastore.getMessage(Messages.BookUsefulCommands)).append("\n\n");
+            StringBuilder page2 = new StringBuilder(datastore.getMessage(MessageType.BookUsefulCommands)).append("\n\n");
             page2.append("/Trust /UnTrust /TrustList\n");
             page2.append("/ClaimsList\n");
             page2.append("/AbandonClaim\n\n");

@@ -18,7 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention.claim;
 
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 
 /**
  * Enum representing the permissions available in a {@link Claim}.
@@ -27,36 +27,36 @@ public enum ClaimPermission {
     /**
      * ClaimPermission used for owner-based checks. Cannot be granted and grants all other permissions.
      */
-    Edit(Messages.OnlyOwnersModifyClaims),
+    Edit(MessageType.OnlyOwnersModifyClaims),
     /**
      * ClaimPermission used for building checks. Grants {@link #Inventory} and {@link #Access}.
      */
-    Build(Messages.NoBuildPermission),
+    Build(MessageType.NoBuildPermission),
     /**
      * ClaimPermission used for inventory management checks. Grants {@link #Access}.
      */
-    Inventory(Messages.NoContainersPermission),
+    Inventory(MessageType.NoContainersPermission),
     /**
      * ClaimPermission used for basic access.
      */
-    Access(Messages.NoAccessPermission),
+    Access(MessageType.NoAccessPermission),
     /**
      * ClaimPermission that allows users to grant ClaimPermissions. Uses a separate track from normal
      * permissions and does not grant any other permissions.
      */
-    Manage(Messages.NoPermissionTrust);
+    Manage(MessageType.NoPermissionTrust);
 
-    private final Messages denialMessage;
+    private final MessageType denialMessage;
 
-    ClaimPermission(Messages messages)
+    ClaimPermission(MessageType messages)
     {
         this.denialMessage = messages;
     }
 
     /**
-     * @return the {@link Messages Message} used when alerting a user that they lack the ClaimPermission
+     * @return the {@link MessageType Message} used when alerting a user that they lack the ClaimPermission
      */
-    public Messages getDenialMessage()
+    public MessageType getDenialMessage()
     {
         return denialMessage;
     }

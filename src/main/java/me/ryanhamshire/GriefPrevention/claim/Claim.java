@@ -20,7 +20,7 @@ package me.ryanhamshire.GriefPrevention.claim;
 
 import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
@@ -570,7 +570,7 @@ public class Claim
             PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(uuid);
             if (playerData.inPvpCombat())
             {
-                return () -> GriefPrevention.instance.dataStore.getMessage(Messages.NoBuildPvP);
+                return () -> GriefPrevention.instance.dataStore.getMessage(MessageType.NoBuildPvP);
             }
 
             // Allow farming crops with container trust.
@@ -595,7 +595,7 @@ public class Claim
         {
             String reason = GriefPrevention.instance.dataStore.getMessage(permission.getDenialMessage(), this.getOwnerName());
             if (hasBypassPermission(player, permission))
-                reason += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                reason += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
             return reason;
         };
     }
@@ -760,7 +760,7 @@ public class Claim
             return this.parent.getOwnerName();
 
         if (this.ownerID == null)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.OwnerNameForAdminClaims);
+            return GriefPrevention.instance.dataStore.getMessage(MessageType.OwnerNameForAdminClaims);
 
         return GriefPrevention.lookupPlayerName(this.ownerID);
     }
@@ -849,7 +849,7 @@ public class Claim
 
         //determine maximum allowable entity count, based on claim size
         int maxEntities = this.getArea() / 50;
-        if (maxEntities == 0) return GriefPrevention.instance.dataStore.getMessage(Messages.ClaimTooSmallForEntities);
+        if (maxEntities == 0) return GriefPrevention.instance.dataStore.getMessage(MessageType.ClaimTooSmallForEntities);
 
         //count current entities (ignoring players)
         int totalEntities = 0;
@@ -868,7 +868,7 @@ public class Claim
         }
 
         if (totalEntities >= maxEntities)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.TooManyEntitiesInClaim);
+            return GriefPrevention.instance.dataStore.getMessage(MessageType.TooManyEntitiesInClaim);
 
         return null;
     }
@@ -880,7 +880,7 @@ public class Claim
         //determine maximum allowable entity count, based on claim size
         int maxActives = this.getArea() / 100;
         if (maxActives == 0)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.ClaimTooSmallForActiveBlocks);
+            return GriefPrevention.instance.dataStore.getMessage(MessageType.ClaimTooSmallForActiveBlocks);
 
         //count current actives
         int totalActives = 0;
@@ -901,7 +901,7 @@ public class Claim
         }
 
         if (totalActives >= maxActives)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.TooManyActiveBlocksInClaim);
+            return GriefPrevention.instance.dataStore.getMessage(MessageType.TooManyActiveBlocksInClaim);
 
         return null;
     }

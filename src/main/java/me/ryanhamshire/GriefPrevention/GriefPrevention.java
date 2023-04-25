@@ -19,12 +19,11 @@
 package me.ryanhamshire.GriefPrevention;
 
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;
 import me.ryanhamshire.GriefPrevention.listeners.EntityEventHandler;
 import me.ryanhamshire.GriefPrevention.tasks.EntityCleanupTask;
-import me.ryanhamshire.GriefPrevention.util.BlockSnapshot;
-import me.ryanhamshire.GriefPrevention.util.DataStore;
+import me.ryanhamshire.GriefPrevention.util.*;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
@@ -33,22 +32,13 @@ import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
 import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
-import me.ryanhamshire.GriefPrevention.tasks.CheckForPortalTrapTask;
 import me.ryanhamshire.GriefPrevention.tasks.DeliverClaimBlocksTask;
 import me.ryanhamshire.GriefPrevention.tasks.FindUnusedClaimsTask;
 import me.ryanhamshire.GriefPrevention.tasks.PvPImmunityValidationTask;
-import me.ryanhamshire.GriefPrevention.tasks.SendPlayerMessageTask;
-import me.ryanhamshire.GriefPrevention.util.CustomLogger;
-import me.ryanhamshire.GriefPrevention.util.DatabaseDataStore;
-import me.ryanhamshire.GriefPrevention.util.FlatFileDataStore;
-import me.ryanhamshire.GriefPrevention.util.IgnoreLoaderThread;
-import me.ryanhamshire.GriefPrevention.util.PendingItemProtection;
-import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.BanList;
 import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -1052,19 +1042,19 @@ public class GriefPrevention extends JavaPlugin
         Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
         if (claim == null)
         {
-            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.AbandonClaimMissing);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.AbandonClaimMissing);
         }
 
         //verify ownership
         else if (claim.checkPermission(player, ClaimPermission.Edit, null) != null)
         {
-            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.NotYourClaim);
+            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NotYourClaim);
         }
 
         //warn if has children and we're not explicitly deleting a top level claim
         else if (claim.children.size() > 0 && !deleteTopLevelClaim)
         {
-            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.DeleteTopLevelClaim);
+            Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.DeleteTopLevelClaim);
             return true;
         }
         else
@@ -1077,7 +1067,7 @@ public class GriefPrevention extends JavaPlugin
             if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
             {
                 GriefPrevention.AddLogEntry(player.getName() + " abandoned a claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()));
-                GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), Messages.UnclaimCleanupWarning);
+                Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.UnclaimCleanupWarning);
 //                GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
             }
 
@@ -1089,7 +1079,7 @@ public class GriefPrevention extends JavaPlugin
 
             //tell the player how many claim blocks he has left
             int remainingBlocks = playerData.getRemainingClaimBlocks();
-            GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.AbandonSuccess, String.valueOf(remainingBlocks));
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.AbandonSuccess, String.valueOf(remainingBlocks));
 
             //revert any current visualization
             playerData.setVisibleBoundaries(null);
@@ -1116,7 +1106,7 @@ public class GriefPrevention extends JavaPlugin
             permission = recipientName.substring(1, recipientName.length() - 1);
             if (permission == null || permission.isEmpty())
             {
-                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.InvalidPermissionID);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.InvalidPermissionID);
                 return;
             }
         }
@@ -1126,7 +1116,7 @@ public class GriefPrevention extends JavaPlugin
             boolean isPermissionFormat = recipientName.contains(".");
             if (otherPlayer == null && !recipientName.equals("public") && !recipientName.equals("all") && !isPermissionFormat)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.PlayerNotFound2);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PlayerNotFound2);
                 return;
             }
 
@@ -1156,9 +1146,8 @@ public class GriefPrevention extends JavaPlugin
         else
         {
             //check permission here
-            if (claim.checkPermission(player, ClaimPermission.Manage, null) != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.NoPermissionTrust, claim.getOwnerName());
+            if (claim.checkPermission(player, ClaimPermission.Manage, null) != null) {
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoPermissionTrust, claim.getOwnerName());
                 return;
             }
 
@@ -1184,7 +1173,7 @@ public class GriefPrevention extends JavaPlugin
             //error message for trying to grant a permission the player doesn't have
             if (errorMessage != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.CantGrantThatPermission);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CantGrantThatPermission);
                 return;
             }
 
@@ -1194,7 +1183,7 @@ public class GriefPrevention extends JavaPlugin
         //if we didn't determine which claims to modify, tell the player to be specific
         if (targetClaims.size() == 0)
         {
-            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.GrantPermissionNoClaim);
+            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.GrantPermissionNoClaim);
             return;
         }
 
@@ -1237,36 +1226,36 @@ public class GriefPrevention extends JavaPlugin
         }
 
         //notify player
-        if (recipientName.equals("public")) recipientName = this.dataStore.getMessage(Messages.CollectivePublic);
+        if (recipientName.equals("public")) recipientName = this.dataStore.getMessage(MessageType.CollectivePublic);
         String permissionDescription;
         if (permissionLevel == null)
         {
-            permissionDescription = this.dataStore.getMessage(Messages.PermissionsPermission);
+            permissionDescription = this.dataStore.getMessage(MessageType.PermissionsPermission);
         }
         else if (permissionLevel == ClaimPermission.Build)
         {
-            permissionDescription = this.dataStore.getMessage(Messages.BuildPermission);
+            permissionDescription = this.dataStore.getMessage(MessageType.BuildPermission);
         }
         else if (permissionLevel == ClaimPermission.Access)
         {
-            permissionDescription = this.dataStore.getMessage(Messages.AccessPermission);
+            permissionDescription = this.dataStore.getMessage(MessageType.AccessPermission);
         }
         else //ClaimPermission.Inventory
         {
-            permissionDescription = this.dataStore.getMessage(Messages.ContainersPermission);
+            permissionDescription = this.dataStore.getMessage(MessageType.ContainersPermission);
         }
 
         String location;
         if (claim == null)
         {
-            location = this.dataStore.getMessage(Messages.LocationAllClaims);
+            location = this.dataStore.getMessage(MessageType.LocationAllClaims);
         }
         else
         {
-            location = this.dataStore.getMessage(Messages.LocationCurrentClaim);
+            location = this.dataStore.getMessage(MessageType.LocationCurrentClaim);
         }
 
-        GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.GrantPermissionConfirmation, recipientName, permissionDescription, location);
+        Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.GrantPermissionConfirmation, recipientName, permissionDescription, location);
     }
 
     //helper method to resolve a player by name
@@ -1429,7 +1418,7 @@ public class GriefPrevention extends JavaPlugin
             playerData.pvpImmune = true;
 
             //inform the player after he finishes respawning
-            GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.PvPImmunityStart, 5L);
+            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.PvPImmunityStart, 5L);
 
             //start a task to re-check this player's inventory every minute until his immunity is gone
             PvPImmunityValidationTask task = new PvPImmunityValidationTask(player);
@@ -1502,49 +1491,6 @@ public class GriefPrevention extends JavaPlugin
         while (!chunk.isLoaded() || !chunk.load(true)) ;
     }
 
-    //sends a color-coded message to a player
-    public static void sendMessage(Player player, ChatColor color, Messages messageID, String... args)
-    {
-        sendMessage(player, color, messageID, 0, args);
-    }
-
-    //sends a color-coded message to a player
-    public static void sendMessage(Player player, ChatColor color, Messages messageID, long delayInTicks, String... args)
-    {
-        String message = GriefPrevention.instance.dataStore.getMessage(messageID, args);
-        sendMessage(player, color, message, delayInTicks);
-    }
-
-    //sends a color-coded message to a player
-    public static void sendMessage(Player player, ChatColor color, String message)
-    {
-        if (message == null || message.length() == 0) return;
-
-        if (player == null)
-        {
-            GriefPrevention.AddLogEntry(color + message);
-        }
-        else
-        {
-            player.sendMessage(color + message);
-        }
-    }
-
-    public static void sendMessage(Player player, ChatColor color, String message, long delayInTicks)
-    {
-        SendPlayerMessageTask task = new SendPlayerMessageTask(player, color, message);
-
-        //Only schedule if there should be a delay. Otherwise, send the message right now, else the message will appear out of order.
-        if (delayInTicks > 0)
-        {
-            GriefPrevention.instance.getServer().getScheduler().runTaskLater(GriefPrevention.instance, task, delayInTicks);
-        }
-        else
-        {
-            task.run();
-        }
-    }
-
     //checks whether players can create claims in a world
     public boolean claimsEnabledForWorld(World world)
     {
@@ -1585,10 +1531,10 @@ public class GriefPrevention extends JavaPlugin
                 //exception: when chest claims are enabled, players who have zero land claims and are placing a chest
                 if (material != Material.CHEST || playerData.getClaims().size() > 0 || GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius == -1)
                 {
-                    String reason = this.dataStore.getMessage(Messages.NoBuildOutsideClaims);
+                    String reason = this.dataStore.getMessage(MessageType.NoBuildOutsideClaims);
                     if (player.hasPermission("griefprevention.ignoreclaims"))
-                        reason += "  " + this.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    reason += "  " + this.dataStore.getMessage(Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+                        reason += "  " + this.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
+                    reason += "  " + this.dataStore.getMessage(MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                     return reason;
                 }
                 else
@@ -1645,10 +1591,10 @@ public class GriefPrevention extends JavaPlugin
             //no building in the wilderness in creative mode
             if (this.creativeRulesApply(location) || this.config_claims_worldModes.get(location.getWorld()) == ClaimsMode.SurvivalRequiringClaims)
             {
-                String reason = this.dataStore.getMessage(Messages.NoBuildOutsideClaims);
+                String reason = this.dataStore.getMessage(MessageType.NoBuildOutsideClaims);
                 if (player.hasPermission("griefprevention.ignoreclaims"))
-                    reason += "  " + this.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                reason += "  " + this.dataStore.getMessage(Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+                    reason += "  " + this.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
+                reason += "  " + this.dataStore.getMessage(MessageType.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 return reason;
             }
 
@@ -1916,16 +1862,16 @@ public class GriefPrevention extends JavaPlugin
 
     //Track scheduled "rescues" so we can cancel them if the player happens to teleport elsewhere so we can cancel it.
     public ConcurrentHashMap<UUID, BukkitTask> portalReturnTaskMap = new ConcurrentHashMap<>();
-
-    public void startRescueTask(Player player, Location location)
-    {
-        //Schedule task to reset player's portal cooldown after 30 seconds (Maximum timeout time for client, in case their network is slow and taking forever to load chunks)
-        BukkitTask task = new CheckForPortalTrapTask(player, this, location).runTaskLater(GriefPrevention.instance, 600L);
-
-        //Cancel existing rescue task
-        if (portalReturnTaskMap.containsKey(player.getUniqueId()))
-            portalReturnTaskMap.put(player.getUniqueId(), task).cancel();
-        else
-            portalReturnTaskMap.put(player.getUniqueId(), task);
-    }
+//
+//    public void startRescueTask(Player player, Location location)
+//    {
+//        //Schedule task to reset player's portal cooldown after 30 seconds (Maximum timeout time for client, in case their network is slow and taking forever to load chunks)
+//        BukkitTask task = new CheckForPortalTrapTask(player, this, location).runTaskLater(GriefPrevention.instance, 600L);
+//
+//        //Cancel existing rescue task
+//        if (portalReturnTaskMap.containsKey(player.getUniqueId()))
+//            portalReturnTaskMap.put(player.getUniqueId(), task).cancel();
+//        else
+//            portalReturnTaskMap.put(player.getUniqueId(), task);
+//    }
 }

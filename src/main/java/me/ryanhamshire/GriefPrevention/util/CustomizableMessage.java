@@ -18,14 +18,14 @@
 
 package me.ryanhamshire.GriefPrevention.util;
 
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 
 public class CustomizableMessage {
-    public Messages id;
+    public MessageType id;
     public String text;
     public String notes;
 
-    public CustomizableMessage(Messages id, String text, String notes) {
+    public CustomizableMessage(MessageType id, String text, String notes) {
         this.id = id;
         this.text = text;
         this.notes = notes;

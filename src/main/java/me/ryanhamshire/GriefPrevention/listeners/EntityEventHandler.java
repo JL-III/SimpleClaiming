@@ -19,11 +19,12 @@
 package me.ryanhamshire.GriefPrevention.listeners;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import me.ryanhamshire.GriefPrevention.util.Messages;
 import me.ryanhamshire.GriefPrevention.util.PendingItemProtection;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.events.PreventPvPEvent;
 import me.ryanhamshire.GriefPrevention.events.ProtectDeathDropsEvent;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
@@ -308,7 +309,7 @@ public class EntityEventHandler implements Listener
             {
                 // Unlike entities where arrows rebound and may cause multiple alerts,
                 // projectiles lodged in blocks do not continuously re-trigger events.
-                GriefPrevention.sendMessage((Player) shooter, TextMode.Err, denial.get());
+                Messages.sendMessage((Player) shooter, TextMode.Err.getColor(), denial.get());
                 event.setCancelled(true);
             }
 
@@ -442,14 +443,14 @@ public class EntityEventHandler implements Listener
                 continue;
             }
 
-            //if claim is under siege, allow soft blocks to be destroyed
-            if (claim != null && claim.siegeData != null)
-            {
-                Material material = block.getType();
-                boolean breakable = GriefPrevention.instance.config_siege_blocks.contains(material);
-
-                if (breakable) continue;
-            }
+//            //if claim is under siege, allow soft blocks to be destroyed
+//            if (claim != null && claim.siegeData != null)
+//            {
+//                Material material = block.getType();
+//                boolean breakable = GriefPrevention.instance.config_siege_blocks.contains(material);
+//
+//                if (breakable) continue;
+//            }
 
             //if no, then also consider surface rules
             if (claim == null)
@@ -579,13 +580,12 @@ public class EntityEventHandler implements Listener
         Player player = (Player) entity;
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
-        //TODO take a closer look at siege functionality here and remove
         //if involved in a siege
-        if (playerData.siegeData != null)
-        {
-            //end it, with the dieing player being the loser
-            this.dataStore.endSiege(playerData.siegeData, null, player.getName(), event.getDrops());
-        }
+//        if (playerData.siegeData != null)
+//        {
+//            //end it, with the dieing player being the loser
+//            this.dataStore.endSiege(playerData.siegeData, null, player.getName(), event.getDrops());
+//        }
 
         //FEATURE: lock dropped items to player who dropped them
 
@@ -689,7 +689,7 @@ public class EntityEventHandler implements Listener
         if (noBuildReason != null)
         {
             event.setCancelled(true);
-            GriefPrevention.sendMessage(playerRemover, TextMode.Err, noBuildReason);
+            Messages.sendMessage(playerRemover, TextMode.Err.getColor(), noBuildReason);
         }
     }
 
@@ -707,7 +707,7 @@ public class EntityEventHandler implements Listener
         if (noBuildReason != null)
         {
             event.setCancelled(true);
-            GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, noBuildReason);
+            Messages.sendMessage(event.getPlayer(), TextMode.Err.getColor(), noBuildReason);
             return;
         }
 
@@ -721,7 +721,7 @@ public class EntityEventHandler implements Listener
             String noEntitiesReason = claim.allowMoreEntities(false);
             if (noEntitiesReason != null)
             {
-                GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, noEntitiesReason);
+                Messages.sendMessage(event.getPlayer(), TextMode.Err.getColor(), noEntitiesReason);
                 event.setCancelled(true);
                 return;
             }
@@ -942,7 +942,7 @@ public class EntityEventHandler implements Listener
                     {
                         event.setCancelled(true);
                         if (sendErrorMessagesToPlayers)
-                            GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.ThatPlayerPvPImmune);
+                            Messages.sendMessage(attacker, TextMode.Err.getColor(), MessageType.ThatPlayerPvPImmune);
                         return;
                     }
 
@@ -950,7 +950,7 @@ public class EntityEventHandler implements Listener
                     {
                         event.setCancelled(true);
                         if (sendErrorMessagesToPlayers)
-                            GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                            Messages.sendMessage(attacker, TextMode.Err.getColor(), MessageType.CantFightWhileImmune);
                         return;
                     }
                 }
@@ -972,7 +972,7 @@ public class EntityEventHandler implements Listener
                             {
                                 event.setCancelled(true);
                                 if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                                    Messages.sendMessage(attacker, TextMode.Err.getColor(), MessageType.CantFightWhileImmune);
                             }
                             return;
                         }
@@ -989,7 +989,7 @@ public class EntityEventHandler implements Listener
                             {
                                 event.setCancelled(true);
                                 if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.PlayerInPvPSafeZone);
+                                    Messages.sendMessage(attacker, TextMode.Err.getColor(), MessageType.PlayerInPvPSafeZone);
                             }
                             return;
                         }
@@ -1089,7 +1089,7 @@ public class EntityEventHandler implements Listener
                     {
                         event.setCancelled(true);
                         if (sendErrorMessagesToPlayers)
-                            GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
+                            Messages.sendMessage(attacker, TextMode.Err.getColor(), failureReason.get());
                         return;
                     }
                 }
@@ -1119,11 +1119,11 @@ public class EntityEventHandler implements Listener
                             {
                                 //TODO look at this implementation as it cannot be made public apparently
                                 String ownerName = GriefPrevention.lookupPlayerName(owner);
-                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                                String message = GriefPrevention.instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, ownerName);
                                 if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
                                 if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                                    Messages.sendMessage(attacker, TextMode.Err.getColor(), message);
                                 PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(subEvent.getEntity().getLocation(), subEvent.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
                                 Bukkit.getPluginManager().callEvent(pvpEvent);
                                 if (!pvpEvent.isCancelled())
@@ -1137,7 +1137,7 @@ public class EntityEventHandler implements Listener
                             {
                                 event.setCancelled(true);
                                 if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                                    Messages.sendMessage(attacker, TextMode.Err.getColor(), MessageType.CantFightWhileImmune);
                                 return;
                             }
                             // disallow players attacking tamed wolves (dogs) unless under attack by said wolf
@@ -1149,11 +1149,11 @@ public class EntityEventHandler implements Listener
                                 }
                                 event.setCancelled(true);
                                 String ownerName = GriefPrevention.lookupPlayerName(owner);
-                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                                String message = GriefPrevention.instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, ownerName);
                                 if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
                                 if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                                    Messages.sendMessage(attacker, TextMode.Err.getColor(), message);
                                 return;
                             }
                         }
@@ -1221,9 +1221,9 @@ public class EntityEventHandler implements Listener
                             final Player finalAttacker = attacker;
                             override = () ->
                             {
-                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                                String message = GriefPrevention.instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, claim.getOwnerName());
                                 if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
-                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
                                 return message;
                             };
                         }
@@ -1239,7 +1239,7 @@ public class EntityEventHandler implements Listener
 
                             if (sendErrorMessagesToPlayers)
                             {
-                                GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
+                                Messages.sendMessage(attacker, TextMode.Err.getColor(), noContainersReason.get());
                             }
                             event.setCancelled(true);
                         }
@@ -1441,16 +1441,16 @@ public class EntityEventHandler implements Listener
                 final Player finalAttacker = attacker;
                 Supplier<String> override = () ->
                 {
-                    String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                    String message = GriefPrevention.instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, claim.getOwnerName());
                     if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                        message += "  " + GriefPrevention.instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
                     return message;
                 };
                 Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
                 if (noContainersReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
+                    Messages.sendMessage(attacker, TextMode.Err.getColor(), noContainersReason.get());
                 }
 
                 //cache claim for later
@@ -1513,14 +1513,14 @@ public class EntityEventHandler implements Listener
                             else
                             {
                                 // Source is a player. Determine if they have permission to access entities in the claim.
-                                Supplier<String> override = () -> instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                                Supplier<String> override = () -> instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, claim.getOwnerName());
                                 final Supplier<String> noContainersReason = claim.checkPermission(thrower, ClaimPermission.Inventory, event, override);
                                 if (noContainersReason != null)
                                 {
                                     event.setIntensity(affected, 0);
                                     if (!messagedPlayer)
                                     {
-                                        GriefPrevention.sendMessage(thrower, TextMode.Err, noContainersReason.get());
+                                        Messages.sendMessage(thrower, TextMode.Err.getColor(), noContainersReason.get());
                                         messagedPlayer = true;
                                     }
                                 }
@@ -1562,7 +1562,7 @@ public class EntityEventHandler implements Listener
                             event.setIntensity(effected, 0);
                             if (!messagedPlayer)
                             {
-                                GriefPrevention.sendMessage(thrower, TextMode.Err, Messages.CantFightWhileImmune);
+                                Messages.sendMessage(thrower, TextMode.Err.getColor(), MessageType.CantFightWhileImmune);
                                 messagedPlayer = true;
                             }
                         }
@@ -1580,7 +1580,7 @@ public class EntityEventHandler implements Listener
                             event.setIntensity(effected, 0);
                             if (!messagedPlayer)
                             {
-                                GriefPrevention.sendMessage(thrower, TextMode.Err, Messages.PlayerInPvPSafeZone);
+                                Messages.sendMessage(thrower, TextMode.Err.getColor(), MessageType.PlayerInPvPSafeZone);
                                 messagedPlayer = true;
                             }
                         }

@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention.listeners;
 
+import me.ryanhamshire.GriefPrevention.util.*;
 import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
@@ -26,12 +27,8 @@ import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
 import me.ryanhamshire.GriefPrevention.enums.CommandCategory;
 import me.ryanhamshire.GriefPrevention.claim.CreateClaimResult;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
-import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.util.IgnoreLoaderThread;
-import me.ryanhamshire.GriefPrevention.enums.Messages;
-import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.tasks.PlayerKickBanTask;
+import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
 import me.ryanhamshire.GriefPrevention.chat.SpamAnalysisResult;
 import me.ryanhamshire.GriefPrevention.chat.SpamDetector;
@@ -42,7 +39,6 @@ import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
 import me.ryanhamshire.GriefPrevention.tasks.AutoExtendClaimTask;
 import me.ryanhamshire.GriefPrevention.tasks.BroadcastMessageTask;
 import me.ryanhamshire.GriefPrevention.tasks.EquipShovelProcessingTask;
-import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -235,7 +231,7 @@ public class PlayerEventHandler implements Listener
                 if (!playerData.profanityWarned)
                 {
                     playerData.profanityWarned = true;
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoProfanity);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoProfanity);
                     event.setCancelled(true);
                     return;
                 }
@@ -292,25 +288,25 @@ public class PlayerEventHandler implements Listener
         //watching for message format how*claim*, and will send a link to the basics video
         if (this.howToClaimPattern == null)
         {
-            this.howToClaimPattern = Pattern.compile(this.dataStore.getMessage(Messages.HowToClaimRegex), Pattern.CASE_INSENSITIVE);
+            this.howToClaimPattern = Pattern.compile(this.dataStore.getMessage(MessageType.HowToClaimRegex), Pattern.CASE_INSENSITIVE);
         }
 
         if (this.howToClaimPattern.matcher(message).matches())
         {
             if (instance.creativeRulesApply(player.getLocation()))
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.CreativeBasicsVideo2, 10L, DataStore.CREATIVE_VIDEO_URL);
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.CreativeBasicsVideo2, 10L, DataStore.CREATIVE_VIDEO_URL);
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.SurvivalBasicsVideo2, 10L, DataStore.SURVIVAL_VIDEO_URL);
+                Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.SurvivalBasicsVideo2, 10L, DataStore.SURVIVAL_VIDEO_URL);
             }
         }
 
         //FEATURE: automatically educate players about the /trapped command
         //check for "trapped" or "stuck" to educate players about the /trapped command
         String trappedwords = this.dataStore.getMessage(
-                Messages.TrappedChatKeyword
+                MessageType.TrappedChatKeyword
         );
         if (!trappedwords.isEmpty())
         {
@@ -321,10 +317,10 @@ public class PlayerEventHandler implements Listener
                 if (!message.contains("/trapped")
                         && message.contains(checkWord))
                 {
-                    GriefPrevention.sendMessage(
+                    Messages.sendMessage(
                             player,
-                            TextMode.Info,
-                            Messages.TrappedInstructions,
+                            TextMode.Info.getColor(),
+                            MessageType.TrappedInstructions,
                             10L
                     );
                     break;
@@ -356,7 +352,7 @@ public class PlayerEventHandler implements Listener
             if (currentLocation.getBlockX() == playerData.noChatLocation.getBlockX() &&
                     currentLocation.getBlockZ() == playerData.noChatLocation.getBlockZ())
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoChatUntilMove, 10L);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoChatUntilMove, 10L);
                 result.muteReason = "pre-movement chat";
             }
             else
@@ -375,32 +371,10 @@ public class PlayerEventHandler implements Listener
             }
         }
 
-        //take action based on spam detector results
-        if (result.shouldBanChatter)
-        {
-            if (instance.config_spam_banOffenders)
-            {
-                //log entry
-                GriefPrevention.AddLogEntry("Banning " + player.getName() + " for spam.", CustomLogEntryTypes.AdminActivity);
-
-                //kick and ban
-                PlayerKickBanTask task = new PlayerKickBanTask(player, instance.config_spam_banMessage, "GriefPrevention Anti-Spam", true);
-                instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 1L);
-            }
-            else
-            {
-                //log entry
-                GriefPrevention.AddLogEntry("Kicking " + player.getName() + " for spam.", CustomLogEntryTypes.AdminActivity);
-
-                //just kick
-                PlayerKickBanTask task = new PlayerKickBanTask(player, "", "GriefPrevention Anti-Spam", false);
-                instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 1L);
-            }
-        }
-        else if (result.shouldWarnChatter)
+        if (result.shouldWarnChatter)
         {
             //warn and log
-            GriefPrevention.sendMessage(player, TextMode.Warn, instance.config_spam_warningMessage, 10L);
+            Messages.sendMessage(player, TextMode.Warn.getColor(), instance.config_spam_warningMessage, 10L);
             GriefPrevention.AddLogEntry("Warned " + player.getName() + " about spam penalties.", CustomLogEntryTypes.Debug, true);
         }
 
@@ -480,7 +454,7 @@ public class PlayerEventHandler implements Listener
                 if (playerData.ignoredPlayers.containsKey(targetPlayer.getUniqueId()) && !targetPlayer.hasPermission("griefprevention.notignorable"))
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.IsIgnoringYou);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.IsIgnoringYou);
                     return;
                 }
 
@@ -488,7 +462,7 @@ public class PlayerEventHandler implements Listener
                 if (targetPlayerData.ignoredPlayers.containsKey(player.getUniqueId()) && !player.hasPermission("griefprevention.notignorable"))
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.IsIgnoringYou);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.IsIgnoringYou);
                     return;
                 }
             }
@@ -498,10 +472,10 @@ public class PlayerEventHandler implements Listener
         if (playerData == null) playerData = this.dataStore.getPlayerData(event.getPlayer().getUniqueId());
 
         //TODO take a look at the seige data here
-        if ((playerData.inPvpCombat() || playerData.siegeData != null) && instance.config_pvp_blockedCommands.contains(command))
+        if ((playerData.inPvpCombat()) && instance.config_pvp_blockedCommands.contains(command))
         {
             event.setCancelled(true);
-            GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, Messages.CommandBannedInPvP);
+            Messages.sendMessage(event.getPlayer(), TextMode.Err.getColor(), MessageType.CommandBannedInPvP);
             return;
         }
 
@@ -561,7 +535,7 @@ public class PlayerEventHandler implements Listener
                 Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Access, event);
                 if (reason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), reason.get());
                     event.setCancelled(true);
                 }
             }
@@ -828,17 +802,6 @@ public class PlayerEventHandler implements Listener
                         ipCount++;
                     }
                 }
-
-                if (ipCount >= ipLimit)
-                {
-                    //kick player
-                    PlayerKickBanTask task = new PlayerKickBanTask(player, instance.dataStore.getMessage(Messages.TooMuchIpOverlap), "GriefPrevention IP-sharing limit.", false);
-                    instance.getServer().getScheduler().scheduleSyncDelayedTask(instance, task, 100L);
-
-                    //silence join message
-                    event.setJoinMessage(null);
-                    return;
-                }
             }
         }
 
@@ -849,7 +812,7 @@ public class PlayerEventHandler implements Listener
         if (player.hasMetadata("GP_PORTALRESCUE"))
         {
             //If so, let him know and rescue him in 10 seconds. If he is in fact not trapped, hopefully chunks will have loaded by this time so he can walk out.
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.NetherPortalTrapDetectionMessage, 20L);
+            Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.NetherPortalTrapDetectionMessage, 20L);
             new BukkitRunnable()
             {
                 @Override
@@ -898,7 +861,7 @@ public class PlayerEventHandler implements Listener
         //also send him any messaged from grief prevention he would have received while dead
         if (playerData.messageOnRespawn != null)
         {
-            GriefPrevention.sendMessage(player, ChatColor.RESET /*color is alrady embedded in message in this case*/, playerData.messageOnRespawn, 40L);
+            Messages.sendMessage(player, ChatColor.RESET /*color is alrady embedded in message in this case*/, playerData.messageOnRespawn, 40L);
             playerData.messageOnRespawn = null;
         }
 
@@ -1074,7 +1037,7 @@ public class PlayerEventHandler implements Listener
         //if in combat, don't let him drop it
         if (!instance.config_pvp_allowCombatItemDrop && playerData.inPvpCombat())
         {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoDrop);
+            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PvPNoDrop);
             event.setCancelled(true);
         }
 
@@ -1086,43 +1049,37 @@ public class PlayerEventHandler implements Listener
 //        }
     }
 
-    //when a player teleports via a portal
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    void onPlayerPortal(PlayerPortalEvent event)
-    {
-        //if the player isn't going anywhere, take no action
-        if (event.getTo() == null || event.getTo().getWorld() == null) return;
-
-        Player player = event.getPlayer();
-        if (event.getCause() == TeleportCause.NETHER_PORTAL)
-        {
-            //FEATURE: when players get trapped in a nether portal, send them back through to the other side
-            instance.startRescueTask(player, player.getLocation());
-
-            //don't track in worlds where claims are not enabled
-            if (!instance.claimsEnabledForWorld(event.getTo().getWorld())) return;
-        }
-    }
+//    //when a player teleports via a portal
+//    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+//    void onPlayerPortal(PlayerPortalEvent event) {
+//        //if the player isn't going anywhere, take no action
+//        if (event.getTo() == null || event.getTo().getWorld() == null) return;
+//
+////        Player player = event.getPlayer();
+//        if (event.getCause() == TeleportCause.NETHER_PORTAL) {
+//            //FEATURE: when players get trapped in a nether portal, send them back through to the other side
+////            instance.startRescueTask(player, player.getLocation());
+//
+//            //don't track in worlds where claims are not enabled
+//            if (!instance.claimsEnabledForWorld(event.getTo().getWorld())) return;
+//        }
+//    }
 
     //when a player teleports
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerTeleport(PlayerTeleportEvent event)
-    {
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
         //FEATURE: prevent players from using ender pearls to gain access to secured claims
         TeleportCause cause = event.getCause();
-        if (cause == TeleportCause.CHORUS_FRUIT || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust))
-        {
+        if (cause == TeleportCause.CHORUS_FRUIT || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust)) {
             Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
-            if (toClaim != null)
-            {
+            if (toClaim != null) {
                 playerData.lastClaim = toClaim;
                 Supplier<String> noAccessReason = toClaim.checkPermission(player, ClaimPermission.Access, event);
-                if (noAccessReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
+                if (noAccessReason != null) {
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noAccessReason.get());
                     event.setCancelled(true);
                     if (cause == TeleportCause.ENDER_PEARL)
                         player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
@@ -1131,39 +1088,38 @@ public class PlayerEventHandler implements Listener
         }
 
         //FEATURE: prevent teleport abuse to win sieges
-
-        //these rules only apply to siege worlds only
-        if (!instance.config_siege_enabledWorlds.contains(player.getWorld())) return;
-
-        //these rules do not apply to admins
-        if (player.hasPermission("griefprevention.siegeteleport")) return;
-
-        //Ignore vanilla teleports (usually corrective teleports? See issue #210)
-        if (event.getCause() == TeleportCause.UNKNOWN) return;
-
-        Location source = event.getFrom();
-        Claim sourceClaim = this.dataStore.getClaimAt(source, false, playerData.lastClaim);
-        if (sourceClaim != null && sourceClaim.siegeData != null)
-        {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoTeleport);
-            event.setCancelled(true);
-            return;
-        }
-
-        Location destination = event.getTo();
-        Claim destinationClaim = this.dataStore.getClaimAt(destination, false, null);
-        if (destinationClaim != null && destinationClaim.siegeData != null)
-        {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.BesiegedNoTeleport);
-            event.setCancelled(true);
-            return;
-        }
+//
+//        //these rules only apply to siege worlds only
+//        if (!instance.config_siege_enabledWorlds.contains(player.getWorld())) return;
+//
+//        //these rules do not apply to admins
+//        if (player.hasPermission("griefprevention.siegeteleport")) return;
+//
+//        //Ignore vanilla teleports (usually corrective teleports? See issue #210)
+//        if (event.getCause() == TeleportCause.UNKNOWN) return;
+//
+//        Location source = event.getFrom();
+//        Claim sourceClaim = this.dataStore.getClaimAt(source, false, playerData.lastClaim);
+//        if (sourceClaim != null)
+//        {
+//            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.SiegeNoTeleport);
+//            event.setCancelled(true);
+//            return;
+//        }
+//
+//        Location destination = event.getTo();
+//        Claim destinationClaim = this.dataStore.getClaimAt(destination, false, null);
+//        if (destinationClaim != null)
+//        {
+//            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.BesiegedNoTeleport);
+//            event.setCancelled(true);
+//            return;
+//        }
     }
 
     //when a player triggers a raid (in a claim)
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerTriggerRaid(RaidTriggerEvent event)
-    {
+    public void onPlayerTriggerRaid(RaidTriggerEvent event) {
         if (!instance.config_claims_raidTriggersRequireBuildTrust)
             return;
 
@@ -1183,11 +1139,9 @@ public class PlayerEventHandler implements Listener
 
     //when a player interacts with a specific part of entity...
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event)
-    {
+    public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
         //treat it the same as interacting with an entity in general
-        if (event.getRightClicked().getType() == EntityType.ARMOR_STAND)
-        {
+        if (event.getRightClicked().getType() == EntityType.ARMOR_STAND) {
             this.onPlayerInteractEntity((PlayerInteractEntityEvent) event);
         }
     }
@@ -1227,7 +1181,7 @@ public class PlayerEventHandler implements Listener
                         {
                             tameable.setOwner(playerData.petGiveawayRecipient);
                             playerData.petGiveawayRecipient = null;
-                            GriefPrevention.sendMessage(player, TextMode.Success, Messages.PetGiveawayConfirmation);
+                            Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.PetGiveawayConfirmation);
                             event.setCancelled(true);
                         }
 
@@ -1239,10 +1193,10 @@ public class PlayerEventHandler implements Listener
                         OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
                         String ownerName = owner.getName();
                         if (ownerName == null) ownerName = "someone";
-                        String message = instance.dataStore.getMessage(Messages.NotYourPet, ownerName);
+                        String message = instance.dataStore.getMessage(MessageType.NotYourPet, ownerName);
                         if (player.hasPermission("griefprevention.ignoreclaims"))
-                            message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                        GriefPrevention.sendMessage(player, TextMode.Err, message);
+                            message += "  " + instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
+                        Messages.sendMessage(player, TextMode.Err.getColor(), message);
                         event.setCancelled(true);
                         return;
                     }
@@ -1266,7 +1220,7 @@ public class PlayerEventHandler implements Listener
             String noBuildReason = instance.allowBuild(player, entity.getLocation(), Material.ITEM_FRAME);
             if (noBuildReason != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+                Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
                 event.setCancelled(true);
                 return;
             }
@@ -1282,7 +1236,7 @@ public class PlayerEventHandler implements Listener
             String noEntitiesReason = claim.allowMoreEntities(false);
             if (noEntitiesReason != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, noEntitiesReason);
+                Messages.sendMessage(player, TextMode.Err.getColor(), noEntitiesReason);
                 event.setCancelled(true);
                 return;
             }
@@ -1303,7 +1257,7 @@ public class PlayerEventHandler implements Listener
 
             if (playerData.inPvpCombat())
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoContainers);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PvPNoContainers);
                 event.setCancelled(true);
                 return;
             }
@@ -1322,7 +1276,7 @@ public class PlayerEventHandler implements Listener
                     Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                     if (noContainersReason != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
+                        Messages.sendMessage(player, TextMode.Err.getColor(), noContainersReason.get());
                         event.setCancelled(true);
                         return;
                     }
@@ -1339,16 +1293,16 @@ public class PlayerEventHandler implements Listener
             {
                 Supplier<String> override = () ->
                 {
-                    String message = instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                    String message = instance.dataStore.getMessage(MessageType.NoDamageClaimedEntity, claim.getOwnerName());
                     if (player.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                        message += "  " + instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
 
                     return message;
                 };
                 final Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event, override);
                 if (noContainersReason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noContainersReason.get());
                     event.setCancelled(true);
                     return;
                 }
@@ -1367,7 +1321,7 @@ public class PlayerEventHandler implements Listener
                 if (failureReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, failureReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), failureReason.get());
                     return;
                 }
             }
@@ -1404,10 +1358,10 @@ public class PlayerEventHandler implements Listener
             String reason = failureReason.get();
             if (player.hasPermission("griefprevention.ignoreclaims"))
             {
-                reason += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                reason += "  " + instance.dataStore.getMessage(MessageType.IgnoreClaimsAdvertisement);
             }
 
-            GriefPrevention.sendMessage(player, TextMode.Err, reason);
+            Messages.sendMessage(player, TextMode.Err.getColor(), reason);
 
             //cancel the event by preventing hatching
             event.setHatching(false);
@@ -1440,7 +1394,7 @@ public class PlayerEventHandler implements Listener
                 if (errorMessage != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoDamageClaimedEntity, claim.getOwnerName());
                     return;
                 }
             }
@@ -1449,8 +1403,7 @@ public class PlayerEventHandler implements Listener
 
     //when a player picks up an item...
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onPlayerPickupItem(PlayerPickupItemEvent event)
-    {
+    public void onPlayerPickupItem(PlayerPickupItemEvent event) {
         Player player = event.getPlayer();
 
         //FEATURE: lock dropped items to player who dropped them
@@ -1458,8 +1411,7 @@ public class PlayerEventHandler implements Listener
         //who owns this stack?
         Item item = event.getItem();
         List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-        if (data != null && data.size() > 0)
-        {
+        if (data != null && data.size() > 0) {
             UUID ownerID = (UUID) data.get(0).value();
 
             //has that player unlocked his drops?
@@ -1477,8 +1429,8 @@ public class PlayerEventHandler implements Listener
                     //if hasn't been instructed how to unlock, send explanatory messages
                     if (!playerData.receivedDropUnlockAdvertisement)
                     {
-                        GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, ownerName);
+                        Messages.sendMessage(owner.getPlayer(), TextMode.Instr.getColor(), MessageType.DropUnlockAdvertisement);
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PickupBlockedExplanation, ownerName);
                         playerData.receivedDropUnlockAdvertisement = true;
                     }
 
@@ -1508,7 +1460,7 @@ public class PlayerEventHandler implements Listener
 
                 //otherwise take away his immunity. he may be armed now.  at least, he's worth killing for some loot
                 playerData.pvpImmune = false;
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.PvPImmunityEnd);
+                Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.PvPImmunityEnd);
             }
         }
     }
@@ -1559,7 +1511,7 @@ public class PlayerEventHandler implements Listener
         String noBuildReason = instance.allowBuild(player, block.getLocation(), Material.WATER);
         if (noBuildReason != null)
         {
-            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+            Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
             bucketEvent.setCancelled(true);
             return;
         }
@@ -1579,7 +1531,7 @@ public class PlayerEventHandler implements Listener
             {
                 if (bucketEvent.getBucket() == Material.LAVA_BUCKET)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoWildernessBuckets);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoWildernessBuckets);
                     bucketEvent.setCancelled(true);
                     return;
                 }
@@ -1597,7 +1549,7 @@ public class PlayerEventHandler implements Listener
                     Location location = otherPlayer.getLocation();
                     if (!otherPlayer.equals(player) && otherPlayer.getGameMode() == GameMode.SURVIVAL && player.canSee(otherPlayer) && block.getY() >= location.getBlockY() - 1 && location.distanceSquared(block.getLocation()) < minLavaDistance * minLavaDistance)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoLavaNearOtherPlayer, "another player");
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoLavaNearOtherPlayer, "another player");
                         bucketEvent.setCancelled(true);
                         return;
                     }
@@ -1670,7 +1622,7 @@ public class PlayerEventHandler implements Listener
                     return;
             }
 
-            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+            Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
             bucketEvent.setCancelled(true);
             return;
         }
@@ -1739,7 +1691,7 @@ public class PlayerEventHandler implements Listener
                         if (noBuildReason != null)
                         {
                             event.setCancelled(true);
-                            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
+                            Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason.get());
                             player.sendBlockChange(adjacentBlock.getLocation(), adjacentBlock.getType(), adjacentBlock.getData());
                             return;
                         }
@@ -1785,17 +1737,17 @@ public class PlayerEventHandler implements Listener
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
             //block container use while under siege, so players can't hide items from attackers
-            if (playerData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoContainers);
-                event.setCancelled(true);
-                return;
-            }
+//            if (playerData.siegeData != null)
+//            {
+//                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.SiegeNoContainers);
+//                event.setCancelled(true);
+//                return;
+//            }
 
             //block container use during pvp combat, same reason
             if (playerData.inPvpCombat())
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoContainers);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.PvPNoContainers);
                 event.setCancelled(true);
                 return;
             }
@@ -1810,7 +1762,7 @@ public class PlayerEventHandler implements Listener
                 if (noContainersReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noContainersReason.get());
                     return;
                 }
             }
@@ -1820,7 +1772,7 @@ public class PlayerEventHandler implements Listener
             if (playerData.pvpImmune)
             {
                 playerData.pvpImmune = false;
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.PvPImmunityEnd);
+                Messages.sendMessage(player, TextMode.Warn.getColor(), MessageType.PvPImmunityEnd);
             }
         }
 
@@ -1847,7 +1799,7 @@ public class PlayerEventHandler implements Listener
                 if (noAccessReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noAccessReason.get());
                     return;
                 }
             }
@@ -1866,7 +1818,7 @@ public class PlayerEventHandler implements Listener
                 if (noAccessReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noAccessReason.get());
                     return;
                 }
             }
@@ -1885,7 +1837,7 @@ public class PlayerEventHandler implements Listener
                 if (noContainerReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noContainerReason.get());
                     return;
                 }
             }
@@ -1912,7 +1864,7 @@ public class PlayerEventHandler implements Listener
                 if (noBuildReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason.get());
                     return;
                 }
             }
@@ -1958,7 +1910,7 @@ public class PlayerEventHandler implements Listener
                                 clickedBlockType);
                 if (noBuildReason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
                     event.setCancelled(true);
                 }
 
@@ -1973,7 +1925,7 @@ public class PlayerEventHandler implements Listener
                     Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                     if (reason != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
+                        Messages.sendMessage(player, TextMode.Err.getColor(), reason.get());
                         event.setCancelled(true);
                     }
                 }
@@ -1997,7 +1949,7 @@ public class PlayerEventHandler implements Listener
                     Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                     if (reason != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
+                        Messages.sendMessage(player, TextMode.Err.getColor(), reason.get());
                         event.setCancelled(true);
                     }
                 }
@@ -2027,7 +1979,7 @@ public class PlayerEventHandler implements Listener
                 String noBuildReason = instance.allowBuild(player, clickedBlock.getLocation(), Material.MINECART);
                 if (noBuildReason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noBuildReason);
                     event.setCancelled(true);
                     return;
                 }
@@ -2040,7 +1992,7 @@ public class PlayerEventHandler implements Listener
                 String noEntitiesReason = claim.allowMoreEntities(false);
                 if (noEntitiesReason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noEntitiesReason);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noEntitiesReason);
                     event.setCancelled(true);
                     return;
                 }
@@ -2067,7 +2019,7 @@ public class PlayerEventHandler implements Listener
 
                     //visualize boundaries
                     BoundaryVisualization.visualizeNearbyClaims(player, inspectionEvent.getClaims(), player.getEyeLocation().getBlockY());
-                    GriefPrevention.sendMessage(player, TextMode.Info, Messages.ShowNearbyClaims, String.valueOf(claims.size()));
+                    Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.ShowNearbyClaims, String.valueOf(claims.size()));
 
                     return;
                 }
@@ -2091,7 +2043,7 @@ public class PlayerEventHandler implements Listener
                 //air indicates too far away
                 if (clickedBlockType == Material.AIR)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.TooFarAway);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.TooFarAway);
 
                     // Remove visualizations
                     playerData.setVisibleBoundaries(null);
@@ -2108,7 +2060,7 @@ public class PlayerEventHandler implements Listener
                     Bukkit.getPluginManager().callEvent(inspectionEvent);
                     if (inspectionEvent.isCancelled()) return;
 
-                    GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockNotClaimed);
+                    Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.BlockNotClaimed);
 
                     playerData.setVisibleBoundaries(null);
                 }
@@ -2122,14 +2074,14 @@ public class PlayerEventHandler implements Listener
                     if (inspectionEvent.isCancelled()) return;
 
                     playerData.lastClaim = claim;
-                    GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockClaimed, claim.getOwnerName());
+                    Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.BlockClaimed, claim.getOwnerName());
 
                     //visualize boundary
                     BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM);
 
                     if (player.hasPermission("griefprevention.seeclaimsize"))
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Info, "  " + claim.getWidth() + "x" + claim.getHeight() + "=" + claim.getArea());
+                        Messages.sendMessage(player, TextMode.Info.getColor(), "  " + claim.getWidth() + "x" + claim.getHeight() + "=" + claim.getArea());
                     }
 
                     //if permission, tell about the player's offline time
@@ -2143,7 +2095,7 @@ public class PlayerEventHandler implements Listener
                         Date now = new Date();
                         long daysElapsed = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
 
-                        GriefPrevention.sendMessage(player, TextMode.Info, Messages.PlayerOfflineTime, String.valueOf(daysElapsed));
+                        Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.PlayerOfflineTime, String.valueOf(daysElapsed));
 
                         //drop the data we just loaded, if the player isn't online
                         if (instance.getServer().getPlayer(claim.ownerID) == null)
@@ -2161,12 +2113,12 @@ public class PlayerEventHandler implements Listener
 
             //disable golden shovel while under siege
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            if (playerData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoShovel);
-                event.setCancelled(true);
-                return;
-            }
+//            if (playerData.siegeData != null)
+//            {
+//                GriefPrevention.sendMessage(player, TextMode.Err, MessageType.SiegeNoShovel);
+//                event.setCancelled(true);
+//                return;
+//            }
 
             //FEATURE: shovel and stick can be used from a distance away
             if (action == Action.RIGHT_CLICK_AIR)
@@ -2185,176 +2137,177 @@ public class PlayerEventHandler implements Listener
             //can't use the shovel from too far away
             if (clickedBlockType == Material.AIR)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.TooFarAway);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.TooFarAway);
                 return;
             }
 
             //if the player is in restore nature mode, do only that
             UUID playerID = player.getUniqueId();
             playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            if (playerData.shovelMode == ShovelMode.RestoreNature || playerData.shovelMode == ShovelMode.RestoreNatureAggressive)
-            {
-                //if the clicked block is in a claim, visualize that claim and deliver an error message
-                Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
-                if (claim != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.BlockClaimed, claim.getOwnerName());
-                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
-                    return;
-                }
-
-                //figure out which chunk to repair
-                Chunk chunk = player.getWorld().getChunkAt(clickedBlock.getLocation());
-                //start the repair process
-
-                //set boundaries for processing
-                int miny = clickedBlock.getY();
-
-                //if not in aggressive mode, extend the selection down to a little below sea level
-                if (!(playerData.shovelMode == ShovelMode.RestoreNatureAggressive))
-                {
-                    if (miny > instance.getSeaLevel(chunk.getWorld()) - 10)
-                    {
-                        miny = instance.getSeaLevel(chunk.getWorld()) - 10;
-                    }
-                }
-
-                instance.restoreChunk(chunk, miny, playerData.shovelMode == ShovelMode.RestoreNatureAggressive, 0, player);
-
-                return;
-            }
-
-            //if in restore nature fill mode
-            if (playerData.shovelMode == ShovelMode.RestoreNatureFill)
-            {
-                ArrayList<Material> allowedFillBlocks = new ArrayList<>();
-                Environment environment = clickedBlock.getWorld().getEnvironment();
-                if (environment == Environment.NETHER)
-                {
-                    allowedFillBlocks.add(Material.NETHERRACK);
-                }
-                else if (environment == Environment.THE_END)
-                {
-                    allowedFillBlocks.add(Material.END_STONE);
-                }
-                else
-                {
-                    allowedFillBlocks.add(Material.GRASS);
-                    allowedFillBlocks.add(Material.DIRT);
-                    allowedFillBlocks.add(Material.STONE);
-                    allowedFillBlocks.add(Material.SAND);
-                    allowedFillBlocks.add(Material.SANDSTONE);
-                    allowedFillBlocks.add(Material.ICE);
-                }
-
-                Block centerBlock = clickedBlock;
-
-                int maxHeight = centerBlock.getY();
-                int minx = centerBlock.getX() - playerData.fillRadius;
-                int maxx = centerBlock.getX() + playerData.fillRadius;
-                int minz = centerBlock.getZ() - playerData.fillRadius;
-                int maxz = centerBlock.getZ() + playerData.fillRadius;
-                int minHeight = maxHeight - 10;
-                minHeight = Math.max(minHeight, clickedBlock.getWorld().getMinHeight());
-
-                Claim cachedClaim = null;
-                for (int x = minx; x <= maxx; x++)
-                {
-                    for (int z = minz; z <= maxz; z++)
-                    {
-                        //circular brush
-                        Location location = new Location(centerBlock.getWorld(), x, centerBlock.getY(), z);
-                        if (location.distance(centerBlock.getLocation()) > playerData.fillRadius) continue;
-
-                        //default fill block is initially the first from the allowed fill blocks list above
-                        Material defaultFiller = allowedFillBlocks.get(0);
-
-                        //prefer to use the block the player clicked on, if it's an acceptable fill block
-                        if (allowedFillBlocks.contains(centerBlock.getType()))
-                        {
-                            defaultFiller = centerBlock.getType();
-                        }
-
-                        //if the player clicks on water, try to sink through the water to find something underneath that's useful for a filler
-                        else if (centerBlock.getType() == Material.WATER)
-                        {
-                            Block block = centerBlock.getWorld().getBlockAt(centerBlock.getLocation());
-                            while (!allowedFillBlocks.contains(block.getType()) && block.getY() > centerBlock.getY() - 10)
-                            {
-                                block = block.getRelative(BlockFace.DOWN);
-                            }
-                            if (allowedFillBlocks.contains(block.getType()))
-                            {
-                                defaultFiller = block.getType();
-                            }
-                        }
-
-                        //fill bottom to top
-                        for (int y = minHeight; y <= maxHeight; y++)
-                        {
-                            Block block = centerBlock.getWorld().getBlockAt(x, y, z);
-
-                            //respect claims
-                            Claim claim = this.dataStore.getClaimAt(block.getLocation(), false, cachedClaim);
-                            if (claim != null)
-                            {
-                                cachedClaim = claim;
-                                break;
-                            }
-
-                            //only replace air, spilling water, snow, long grass
-                            if (block.getType() == Material.AIR || block.getType() == Material.SNOW || (block.getType() == Material.WATER && ((Levelled) block.getBlockData()).getLevel() != 0) || block.getType() == Material.GRASS)
-                            {
-                                //if the top level, always use the default filler picked above
-                                if (y == maxHeight)
-                                {
-                                    block.setType(defaultFiller);
-                                }
-
-                                //otherwise look to neighbors for an appropriate fill block
-                                else
-                                {
-                                    Block eastBlock = block.getRelative(BlockFace.EAST);
-                                    Block westBlock = block.getRelative(BlockFace.WEST);
-                                    Block northBlock = block.getRelative(BlockFace.NORTH);
-                                    Block southBlock = block.getRelative(BlockFace.SOUTH);
-
-                                    //first, check lateral neighbors (ideally, want to keep natural layers)
-                                    if (allowedFillBlocks.contains(eastBlock.getType()))
-                                    {
-                                        block.setType(eastBlock.getType());
-                                    }
-                                    else if (allowedFillBlocks.contains(westBlock.getType()))
-                                    {
-                                        block.setType(westBlock.getType());
-                                    }
-                                    else if (allowedFillBlocks.contains(northBlock.getType()))
-                                    {
-                                        block.setType(northBlock.getType());
-                                    }
-                                    else if (allowedFillBlocks.contains(southBlock.getType()))
-                                    {
-                                        block.setType(southBlock.getType());
-                                    }
-
-                                    //if all else fails, use the default filler selected above
-                                    else
-                                    {
-                                        block.setType(defaultFiller);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return;
-            }
+//            if (playerData.shovelMode == ShovelMode.RestoreNature || playerData.shovelMode == ShovelMode.RestoreNatureAggressive)
+//            {
+//                //if the clicked block is in a claim, visualize that claim and deliver an error message
+//                Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
+//                if (claim != null)
+//                {
+//                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.BlockClaimed, claim.getOwnerName());
+//                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+//                    return;
+//                }
+//
+//                //figure out which chunk to repair
+//                Chunk chunk = player.getWorld().getChunkAt(clickedBlock.getLocation());
+//                //start the repair process
+//
+//                //set boundaries for processing
+//                int miny = clickedBlock.getY();
+//
+//                //TODO check on this, we dont restore nature anymore
+//                //if not in aggressive mode, extend the selection down to a little below sea level
+//                if (!(playerData.shovelMode == ShovelMode.RestoreNatureAggressive))
+//                {
+//                    if (miny > instance.getSeaLevel(chunk.getWorld()) - 10)
+//                    {
+//                        miny = instance.getSeaLevel(chunk.getWorld()) - 10;
+//                    }
+//                }
+//
+////                instance.restoreChunk(chunk, miny, playerData.shovelMode == ShovelMode.RestoreNatureAggressive, 0, player);
+//
+//                return;
+//            }
+//
+//            //if in restore nature fill mode
+//            if (playerData.shovelMode == ShovelMode.RestoreNatureFill)
+//            {
+//                ArrayList<Material> allowedFillBlocks = new ArrayList<>();
+//                Environment environment = clickedBlock.getWorld().getEnvironment();
+//                if (environment == Environment.NETHER)
+//                {
+//                    allowedFillBlocks.add(Material.NETHERRACK);
+//                }
+//                else if (environment == Environment.THE_END)
+//                {
+//                    allowedFillBlocks.add(Material.END_STONE);
+//                }
+//                else
+//                {
+//                    allowedFillBlocks.add(Material.GRASS);
+//                    allowedFillBlocks.add(Material.DIRT);
+//                    allowedFillBlocks.add(Material.STONE);
+//                    allowedFillBlocks.add(Material.SAND);
+//                    allowedFillBlocks.add(Material.SANDSTONE);
+//                    allowedFillBlocks.add(Material.ICE);
+//                }
+//
+//                Block centerBlock = clickedBlock;
+//
+//                int maxHeight = centerBlock.getY();
+//                int minx = centerBlock.getX() - playerData.fillRadius;
+//                int maxx = centerBlock.getX() + playerData.fillRadius;
+//                int minz = centerBlock.getZ() - playerData.fillRadius;
+//                int maxz = centerBlock.getZ() + playerData.fillRadius;
+//                int minHeight = maxHeight - 10;
+//                minHeight = Math.max(minHeight, clickedBlock.getWorld().getMinHeight());
+//
+//                Claim cachedClaim = null;
+//                for (int x = minx; x <= maxx; x++)
+//                {
+//                    for (int z = minz; z <= maxz; z++)
+//                    {
+//                        //circular brush
+//                        Location location = new Location(centerBlock.getWorld(), x, centerBlock.getY(), z);
+//                        if (location.distance(centerBlock.getLocation()) > playerData.fillRadius) continue;
+//
+//                        //default fill block is initially the first from the allowed fill blocks list above
+//                        Material defaultFiller = allowedFillBlocks.get(0);
+//
+//                        //prefer to use the block the player clicked on, if it's an acceptable fill block
+//                        if (allowedFillBlocks.contains(centerBlock.getType()))
+//                        {
+//                            defaultFiller = centerBlock.getType();
+//                        }
+//
+//                        //if the player clicks on water, try to sink through the water to find something underneath that's useful for a filler
+//                        else if (centerBlock.getType() == Material.WATER)
+//                        {
+//                            Block block = centerBlock.getWorld().getBlockAt(centerBlock.getLocation());
+//                            while (!allowedFillBlocks.contains(block.getType()) && block.getY() > centerBlock.getY() - 10)
+//                            {
+//                                block = block.getRelative(BlockFace.DOWN);
+//                            }
+//                            if (allowedFillBlocks.contains(block.getType()))
+//                            {
+//                                defaultFiller = block.getType();
+//                            }
+//                        }
+//
+//                        //fill bottom to top
+//                        for (int y = minHeight; y <= maxHeight; y++)
+//                        {
+//                            Block block = centerBlock.getWorld().getBlockAt(x, y, z);
+//
+//                            //respect claims
+//                            Claim claim = this.dataStore.getClaimAt(block.getLocation(), false, cachedClaim);
+//                            if (claim != null)
+//                            {
+//                                cachedClaim = claim;
+//                                break;
+//                            }
+//
+//                            //only replace air, spilling water, snow, long grass
+//                            if (block.getType() == Material.AIR || block.getType() == Material.SNOW || (block.getType() == Material.WATER && ((Levelled) block.getBlockData()).getLevel() != 0) || block.getType() == Material.GRASS)
+//                            {
+//                                //if the top level, always use the default filler picked above
+//                                if (y == maxHeight)
+//                                {
+//                                    block.setType(defaultFiller);
+//                                }
+//
+//                                //otherwise look to neighbors for an appropriate fill block
+//                                else
+//                                {
+//                                    Block eastBlock = block.getRelative(BlockFace.EAST);
+//                                    Block westBlock = block.getRelative(BlockFace.WEST);
+//                                    Block northBlock = block.getRelative(BlockFace.NORTH);
+//                                    Block southBlock = block.getRelative(BlockFace.SOUTH);
+//
+//                                    //first, check lateral neighbors (ideally, want to keep natural layers)
+//                                    if (allowedFillBlocks.contains(eastBlock.getType()))
+//                                    {
+//                                        block.setType(eastBlock.getType());
+//                                    }
+//                                    else if (allowedFillBlocks.contains(westBlock.getType()))
+//                                    {
+//                                        block.setType(westBlock.getType());
+//                                    }
+//                                    else if (allowedFillBlocks.contains(northBlock.getType()))
+//                                    {
+//                                        block.setType(northBlock.getType());
+//                                    }
+//                                    else if (allowedFillBlocks.contains(southBlock.getType()))
+//                                    {
+//                                        block.setType(southBlock.getType());
+//                                    }
+//
+//                                    //if all else fails, use the default filler selected above
+//                                    else
+//                                    {
+//                                        block.setType(defaultFiller);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                return;
+//            }
 
             //if the player doesn't have claims permission, don't do anything
             if (!player.hasPermission("griefprevention.createclaims"))
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoCreateClaimPermission);
+                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoCreateClaimPermission);
                 return;
             }
 
@@ -2402,7 +2355,7 @@ public class PlayerEventHandler implements Listener
             if (claim != null)
             {
                 //if the player has permission to edit the claim or subdivision
-                Supplier<String> noEditReason = claim.checkPermission(player, ClaimPermission.Edit, event, () -> instance.dataStore.getMessage(Messages.CreateClaimFailOverlapOtherPlayer, claim.getOwnerName()));
+                Supplier<String> noEditReason = claim.checkPermission(player, ClaimPermission.Edit, event, () -> instance.dataStore.getMessage(MessageType.CreateClaimFailOverlapOtherPlayer, claim.getOwnerName()));
                 if (noEditReason == null)
                 {
                     //if he clicked on a corner, start resizing it
@@ -2410,7 +2363,7 @@ public class PlayerEventHandler implements Listener
                     {
                         playerData.claimResizing = claim;
                         playerData.lastShovelLocation = clickedBlock.getLocation();
-                        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ResizeStart);
+                        Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.ResizeStart);
                     }
 
                     //if he didn't click on a corner and is in subdivision mode, he's creating a new subdivision
@@ -2422,13 +2375,13 @@ public class PlayerEventHandler implements Listener
                             //if the clicked claim was a subdivision, tell him he can't start a new subdivision here
                             if (claim.parent != null)
                             {
-                                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeFailOverlapSubdivision);
+                                Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ResizeFailOverlapSubdivision);
                             }
 
                             //otherwise start a new subdivision
                             else
                             {
-                                GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionStart);
+                                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SubdivisionStart);
                                 playerData.lastShovelLocation = clickedBlock.getLocation();
                                 playerData.claimSubdividing = claim;
                             }
@@ -2460,12 +2413,12 @@ public class PlayerEventHandler implements Listener
                             {
                                 if (result.claim != null)
                                 {
-                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
+                                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateSubdivisionOverlap);
                                     BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
                                 }
                                 else
                                 {
-                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapRegion);
+                                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimFailOverlapRegion);
                                 }
 
                                 return;
@@ -2474,7 +2427,7 @@ public class PlayerEventHandler implements Listener
                             //otherwise, advise him on the /trust command and show him his new subdivision
                             else
                             {
-                                GriefPrevention.sendMessage(player, TextMode.Success, Messages.SubdivisionSuccess);
+                                Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.SubdivisionSuccess);
                                 BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, clickedBlock);
                                 playerData.lastShovelLocation = null;
                                 playerData.claimSubdividing = null;
@@ -2486,7 +2439,7 @@ public class PlayerEventHandler implements Listener
                     //also advise him to consider /abandonclaim or resizing the existing claim
                     else
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlap);
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimFailOverlap);
                         BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM, clickedBlock);
                     }
                 }
@@ -2494,7 +2447,7 @@ public class PlayerEventHandler implements Listener
                 //otherwise tell the player he can't claim here because it's someone else's claim, and show him the claim
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noEditReason.get());
+                    Messages.sendMessage(player, TextMode.Err.getColor(), noEditReason.get());
                     BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
                 }
 
@@ -2510,7 +2463,7 @@ public class PlayerEventHandler implements Listener
                 //if claims are not enabled in this world and it's not an administrative claim, display an error message and stop
                 if (!instance.claimsEnabledForWorld(player.getWorld()))
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimsDisabledWorld);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ClaimsDisabledWorld);
                     return;
                 }
 
@@ -2519,13 +2472,13 @@ public class PlayerEventHandler implements Listener
                         !player.hasPermission("griefprevention.overrideclaimcountlimit") &&
                         playerData.getClaims().size() >= instance.config_claims_maxClaimsPerPlayer)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimCreationFailedOverClaimCountLimit);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ClaimCreationFailedOverClaimCountLimit);
                     return;
                 }
 
                 //remember it, and start him on the new claim
                 playerData.lastShovelLocation = clickedBlock.getLocation();
-                GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimStart);
+                Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.ClaimStart);
 
                 //show him where he's working
                 BoundaryVisualization.visualizeArea(player, new BoundingBox(clickedBlock), VisualizationType.INITIALIZE_ZONE);
@@ -2545,7 +2498,7 @@ public class PlayerEventHandler implements Listener
                 //apply pvp rule
                 if (playerData.inPvpCombat())
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoClaimDuringPvP);
+                    Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NoClaimDuringPvP);
                     return;
                 }
 
@@ -2560,7 +2513,7 @@ public class PlayerEventHandler implements Listener
                         //this IF block is a workaround for craftbukkit bug which fires two events for one interaction
                         if (newClaimWidth != 1 && newClaimHeight != 1)
                         {
-                            GriefPrevention.sendMessage(player, TextMode.Err, Messages.NewClaimTooNarrow, String.valueOf(instance.config_claims_minWidth));
+                            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.NewClaimTooNarrow, String.valueOf(instance.config_claims_minWidth));
                         }
                         return;
                     }
@@ -2570,7 +2523,7 @@ public class PlayerEventHandler implements Listener
                     {
                         if (newArea != 1)
                         {
-                            GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeClaimInsufficientArea, String.valueOf(instance.config_claims_minArea));
+                            Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.ResizeClaimInsufficientArea, String.valueOf(instance.config_claims_minArea));
                         }
 
                         return;
@@ -2584,7 +2537,7 @@ public class PlayerEventHandler implements Listener
                     int remainingBlocks = playerData.getRemainingClaimBlocks();
                     if (newClaimArea > remainingBlocks)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(newClaimArea - remainingBlocks));
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimInsufficientBlocks, String.valueOf(newClaimArea - remainingBlocks));
                         instance.dataStore.tryAdvertiseAdminAlternatives(player);
                         return;
                     }
@@ -2609,12 +2562,12 @@ public class PlayerEventHandler implements Listener
                 {
                     if (result.claim != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimFailOverlapShort);
                         BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
                     }
                     else
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapRegion);
+                        Messages.sendMessage(player, TextMode.Err.getColor(), MessageType.CreateClaimFailOverlapRegion);
                     }
 
                     return;
@@ -2623,15 +2576,15 @@ public class PlayerEventHandler implements Listener
                 //otherwise, advise him on the /trust command and show him his new claim
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
+                    Messages.sendMessage(player, TextMode.Success.getColor(), MessageType.CreateClaimSuccess);
                     BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, clickedBlock);
                     playerData.lastShovelLocation = null;
 
                     //if it's a big claim, tell the player about subdivisions
                     if (!player.hasPermission("griefprevention.adminclaims") && result.claim.getArea() >= 1000)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Info, Messages.BecomeMayor, 200L);
-                        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
+                        Messages.sendMessage(player, TextMode.Info.getColor(), MessageType.BecomeMayor, 200L);
+                        Messages.sendMessage(player, TextMode.Instr.getColor(), MessageType.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
                     }
 
                     AutoExtendClaimTask.scheduleAsync(result.claim);
@@ -2655,7 +2608,7 @@ public class PlayerEventHandler implements Listener
             {
                 event.setCancelled(true);
                 player.closeInventory();
-                GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason.get());
+                Messages.sendMessage(player, TextMode.Err.getColor(), noContainerReason.get());
             }
         }
     }
