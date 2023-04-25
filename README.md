@@ -1,1 +1,1 @@
-# Simple Claims - A gutted / refactored version of GriefPrevention
+# Simple Claims - A gutted / refactored / java syntax version of GriefPrevention
