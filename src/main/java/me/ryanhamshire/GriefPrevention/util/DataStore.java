@@ -19,8 +19,8 @@
 package me.ryanhamshire.GriefPrevention.util;
 
 import com.google.common.io.Files;
-import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationType;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;

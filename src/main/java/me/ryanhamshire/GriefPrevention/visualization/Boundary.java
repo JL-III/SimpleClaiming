@@ -1,4 +1,4 @@
-package com.griefprevention.visualization;
+package me.ryanhamshire.GriefPrevention.visualization;
 
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;

@@ -18,7 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention.util;
 
-import com.griefprevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;

@@ -18,8 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention.tasks;
 
-import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationType;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.util.DataStore;

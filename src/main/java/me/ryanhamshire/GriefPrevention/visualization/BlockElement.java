@@ -1,6 +1,6 @@
-package com.griefprevention.visualization;
+package me.ryanhamshire.GriefPrevention.visualization;
 
-import com.griefprevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;

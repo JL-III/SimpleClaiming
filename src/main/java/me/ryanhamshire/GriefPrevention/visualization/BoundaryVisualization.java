@@ -1,11 +1,11 @@
-package com.griefprevention.visualization;
+package me.ryanhamshire.GriefPrevention.visualization;
 
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import com.griefprevention.events.BoundaryVisualizationEvent;
-import com.griefprevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.events.BoundaryVisualizationEvent;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.World;

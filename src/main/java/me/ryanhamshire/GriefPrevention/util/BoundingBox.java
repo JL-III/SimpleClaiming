@@ -1,6 +1,5 @@
 package me.ryanhamshire.GriefPrevention.util;
 
-import com.griefprevention.util.IntVector;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import org.bukkit.Location;
 import org.bukkit.block.Block;

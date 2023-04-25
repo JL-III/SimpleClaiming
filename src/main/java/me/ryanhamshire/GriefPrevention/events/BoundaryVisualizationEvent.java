@@ -1,11 +1,11 @@
-package com.griefprevention.events;
+package me.ryanhamshire.GriefPrevention.events;
 
-import com.griefprevention.util.IntVector;
-import com.griefprevention.visualization.Boundary;
-import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationProvider;
-import com.griefprevention.visualization.impl.AntiCheatCompatVisualization;
-import com.griefprevention.visualization.impl.FakeBlockVisualization;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.visualization.Boundary;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.VisualizationProvider;
+import me.ryanhamshire.GriefPrevention.visualization.impl.AntiCheatCompatVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.impl.FakeBlockVisualization;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;

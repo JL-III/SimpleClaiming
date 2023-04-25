@@ -1,4 +1,4 @@
-package com.griefprevention.util;
+package me.ryanhamshire.GriefPrevention.util;
 
 import org.bukkit.Location;
 import org.bukkit.World;

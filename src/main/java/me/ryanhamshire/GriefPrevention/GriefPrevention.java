@@ -18,8 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationType;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;

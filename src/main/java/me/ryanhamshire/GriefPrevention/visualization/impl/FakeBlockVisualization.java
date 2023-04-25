@@ -1,9 +1,9 @@
-package com.griefprevention.visualization.impl;
+package me.ryanhamshire.GriefPrevention.visualization.impl;
 
-import com.griefprevention.util.IntVector;
-import com.griefprevention.visualization.BlockBoundaryVisualization;
-import com.griefprevention.visualization.Boundary;
-import com.griefprevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.visualization.BlockBoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.Boundary;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 
 /**
  * A {@link BoundaryVisualization} implementation that displays clientside blocks along
- * {@link com.griefprevention.visualization.Boundary Boundaries}.
+ * {@link Boundary Boundaries}.
  */
 public class FakeBlockVisualization extends BlockBoundaryVisualization
 {

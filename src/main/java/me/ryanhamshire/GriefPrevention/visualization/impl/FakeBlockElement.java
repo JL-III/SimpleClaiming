@@ -1,7 +1,7 @@
-package com.griefprevention.visualization.impl;
+package me.ryanhamshire.GriefPrevention.visualization.impl;
 
-import com.griefprevention.visualization.BlockElement;
-import com.griefprevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.visualization.BlockElement;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;

@@ -1,6 +1,6 @@
-package com.griefprevention.visualization.impl;
+package me.ryanhamshire.GriefPrevention.visualization.impl;
 
-import com.griefprevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.util.BoundingBox;

@@ -1,6 +1,6 @@
-package com.griefprevention.visualization;
+package me.ryanhamshire.GriefPrevention.visualization;
 
-import com.griefprevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.util.IntVector;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.World;

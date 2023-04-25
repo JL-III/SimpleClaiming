@@ -1,4 +1,4 @@
-package com.griefprevention.visualization;
+package me.ryanhamshire.GriefPrevention.visualization;
 
 /**
  * Constants for types of boundaries.

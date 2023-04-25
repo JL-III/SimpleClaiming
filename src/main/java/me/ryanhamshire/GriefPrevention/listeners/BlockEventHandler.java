@@ -18,8 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention.listeners;
 
-import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationType;
+import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
+import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
 import me.ryanhamshire.GriefPrevention.claim.CreateClaimResult;
@@ -28,7 +28,6 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.enums.PistonMode;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
 import me.ryanhamshire.GriefPrevention.util.TextMode;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.ChatColor;
