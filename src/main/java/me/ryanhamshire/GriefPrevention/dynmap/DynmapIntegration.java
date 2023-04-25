@@ -1,9 +1,9 @@
 package me.ryanhamshire.GriefPrevention.dynmap;
 
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.dynmap.DynmapAPI;
 import org.dynmap.markers.AreaMarker;
@@ -12,7 +12,7 @@ import org.dynmap.markers.MarkerSet;
 
 import java.util.*;
 
-public class DynmapGriefPreventionPlugin {
+public class DynmapIntegration {
 
     private static final long TWO_SECONDS_IN_TICKS = 20L * 2L;
     private static final String DEF_INFOWINDOW = "div class=\"infowindow\">Claim Owner: <span style=\"font-weight:bold;\">%owner%</span><br/>Permission Trust: <span style=\"font-weight:bold;\">%managers%</span><br/>Trust: <span style=\"font-weight:bold;\">%builders%</span><br/>Container Trust: <span style=\"font-weight:bold;\">%containers%</span><br/>Access Trust: <span style=\"font-weight:bold;\">%accessors%</span></div>";
@@ -39,76 +39,53 @@ public class DynmapGriefPreventionPlugin {
 
     Map<String, AreaMarker> resareas;
 
-    public void onEnable() {
+    public DynmapIntegration(GriefPrevention plugin) {
+        this.griefPrevention = plugin;
         resareas = new HashMap<>();
-        updateProcessing = new UpdateProcessing(this);
-
-        /* Get dynmap */
-        dynmap = getServer().getPluginManager().getPlugin("dynmap");
-        if(dynmap == null || !dynmap.isEnabled()) {
-            getLogger().severe("Unable to find Dynmap! The plugin will shut down.");
-            disablePlugin();
-            return;
-        }
+        updateProcessing = new UpdateProcessing(plugin, this);
         api = (DynmapAPI) dynmap;
-
-        /* Get GriefPrevention */
-        var gpPlugin = getServer().getPluginManager().getPlugin("GriefPrevention");
-        if(gpPlugin == null || !gpPlugin.isEnabled()) {
-            getLogger().severe("Unable to find GriefPrevention! The plugin will shut down.");
-            disablePlugin();
-            return;
-        }
-        griefPrevention = (GriefPrevention) gpPlugin;
-
         activate();
-
-        getLogger().info("Enabled successfully.");
     }
 
     public void onDisable() {
-        getLogger().info("Cancelling tasks...");
-        getServer().getScheduler().cancelTasks(this);
+        Bukkit.getLogger().info("Cancelling tasks...");
+        Bukkit.getServer().getScheduler().cancelTasks(griefPrevention);
 
         if(set != null) {
-            getLogger().info("Deleting marker set...");
+            Bukkit.getLogger().info("Deleting marker set...");
             set.deleteMarkerSet();
             set = null;
         }
 
-        getLogger().info("Clearing areas...");
+        Bukkit.getLogger().info("Clearing areas...");
         resareas.clear();
 
-        getLogger().info("Disabled successfully.");
-    }
-
-    private void disablePlugin() {
-        getServer().getPluginManager().disablePlugin(this);
+        Bukkit.getLogger().info("Disabled successfully.");
     }
 
     private void activate() {
         /* Get markers API */
         markerapi = api.getMarkerAPI();
         if(markerapi == null) {
-            getLogger().severe("Unable to load dynmap marker API!");
-            disablePlugin();
+            Bukkit.getLogger().severe("Unable to load dynmap marker API!");
+
             return;
         }
 
-        /* Load configuration */
-        if(reload) {
-            reloadConfig();
-            if(set != null) {
-                set.deleteMarkerSet();
-                set = null;
-            }
-            resareas.clear();
-        } else {
-            reload = true;
-        }
-
-        getConfig().options().copyDefaults(true);   /* Load defaults, if needed */
-        saveConfig();  /* Save updates, if needed */
+//        /* Load configuration */
+//        if(reload) {
+//            reloadConfig();
+//            if(set != null) {
+//                set.deleteMarkerSet();
+//                set = null;
+//            }
+//            resareas.clear();
+//        } else {
+//            reload = true;
+//        }
+//
+//        getConfig().options().copyDefaults(true);   /* Load defaults, if needed */
+//        saveConfig();  /* Save updates, if needed */
 
         /* Add marker set for mobs (make it transient) */
         set = markerapi.getMarkerSet("griefprevention.markerset");

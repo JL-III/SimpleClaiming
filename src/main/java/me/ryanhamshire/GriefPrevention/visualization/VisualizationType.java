@@ -3,9 +3,7 @@ package me.ryanhamshire.GriefPrevention.visualization;
 /**
  * Constants for types of boundaries.
  */
-public enum VisualizationType
-{
-
+public enum VisualizationType {
     /** Boundaries for a user claim. */
     CLAIM,
     /** Boundaries for an administrative claim. */

@@ -20,11 +20,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
-import static me.ryanhamshire.GriefPrevention.dynmap.DynmapGriefPreventionPlugin.ADMIN_ID;
+import static me.ryanhamshire.GriefPrevention.dynmap.DynmapIntegration.ADMIN_ID;
 
 public class UpdateProcessing {
 
     private final GriefPrevention plugin;
+    private final DynmapIntegration dynmapIntegration;
     private final Map<UUID, String> playerNameCache;
     private final Pattern idPattern;
     private boolean showDebug;
@@ -32,8 +33,9 @@ public class UpdateProcessing {
     //TODO this is referencing the GriefPrevention class but still has ties to the old set up where this was a standalone plugin.
     // The DynmapGriefPreventionPlugin class needs to be refactored to be an object in this plugin.
 
-    public UpdateProcessing(@NotNull GriefPrevention plugin){
+    public UpdateProcessing(@NotNull GriefPrevention plugin, DynmapIntegration dynmapIntegration) {
         this.plugin = plugin;
+        this.dynmapIntegration = dynmapIntegration;
         showDebug = plugin.getConfig().getBoolean("debug", false);
         this.playerNameCache = new TreeMap<>();
         this.idPattern = Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$");
@@ -45,7 +47,7 @@ public class UpdateProcessing {
         try {
             Field fld = DataStore.class.getDeclaredField("claims");
             fld.setAccessible(true);
-            Object o = fld.get(plugin.griefPrevention.dataStore);
+            Object o = fld.get(plugin.dataStore);
             claims = (ArrayList<Claim>) o;
         } catch(NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
             plugin.getLogger().warning("Error getting claims from reflection: " + e.getMessage());
@@ -107,13 +109,13 @@ public class UpdateProcessing {
             }
         }
         /* Now, review old map - anything left is gone */
-        for(final AreaMarker oldm : plugin.resareas.values()) {
+        for(final AreaMarker oldm : dynmapIntegration.resareas.values()) {
             oldm.deleteMarker();
             deletions++;
         }
 
         /* And replace with new map */
-        plugin.resareas = newmap;
+        dynmapIntegration.resareas = newmap;
 
         if (showDebug)
             plugin.getLogger().info(String.format("claims: %s, child claims: %s, deletions: %s", parentClaims, childClaims, deletions));
@@ -148,9 +150,9 @@ public class UpdateProcessing {
         z[3] = l0.getZ();
         Long id = claim.getID();
         String markerid = "GP_" + Long.toHexString(id);
-        AreaMarker m = plugin.resareas.remove(markerid); /* Existing area? */
+        AreaMarker m = dynmapIntegration.resareas.remove(markerid); /* Existing area? */
         if(m == null) {
-            m = plugin.set.createAreaMarker(markerid, owner, false, wname, x, z, false);
+            m = dynmapIntegration.set.createAreaMarker(markerid, owner, false, wname, x, z, false);
             if(m == null) {
                 return;
             }
@@ -158,7 +160,7 @@ public class UpdateProcessing {
             m.setCornerLocations(x, z); /* Replace corner locations */
             m.setLabel(owner);   /* Update label */
         }
-        if(plugin.use3d) { /* If 3D? */
+        if(dynmapIntegration.use3d) { /* If 3D? */
             m.setRangeY(l1.getY() + 1.0, l0.getY());
         }
         /* Set line and fill properties */
@@ -177,11 +179,11 @@ public class UpdateProcessing {
         if (owner == null) return;
         AreaStyle as = null;
 
-        if(!plugin.ownerstyle.isEmpty()) {
-            as = plugin.ownerstyle.get(owner.toLowerCase());
+        if(!dynmapIntegration.ownerstyle.isEmpty()) {
+            as = dynmapIntegration.ownerstyle.get(owner.toLowerCase());
         }
         if(as == null) {
-            as = plugin.defstyle;
+            as = dynmapIntegration.defstyle;
         }
 
         int sc = 0xFF0000;
@@ -198,16 +200,16 @@ public class UpdateProcessing {
         }
     }
     private boolean isVisible(String owner, String worldname) {
-        if((plugin.visible != null) && (plugin.visible.size() > 0)) {
-            if((!plugin.visible.contains(owner)) && (!plugin.visible.contains("world:" + worldname)) &&
-                    (!plugin.visible.contains(worldname + "/" + owner))) {
+        if((dynmapIntegration.visible != null) && (dynmapIntegration.visible.size() > 0)) {
+            if((!dynmapIntegration.visible.contains(owner)) && (!dynmapIntegration.visible.contains("world:" + worldname)) &&
+                    (!dynmapIntegration.visible.contains(worldname + "/" + owner))) {
                 return false;
             }
         }
 
-        if((plugin.hidden != null) && (plugin.hidden.size() > 0)) {
-            return !plugin.hidden.contains(owner) && !plugin.hidden.contains("world:" + worldname)
-                    && !plugin.hidden.contains(worldname + "/" + owner);
+        if((dynmapIntegration.hidden != null) && (dynmapIntegration.hidden.size() > 0)) {
+            return !dynmapIntegration.hidden.contains(owner) && !dynmapIntegration.hidden.contains("world:" + worldname)
+                    && !dynmapIntegration.hidden.contains(worldname + "/" + owner);
         }
 
         return true;
@@ -217,9 +219,9 @@ public class UpdateProcessing {
     private String formatInfoWindow(@NotNull Claim claim) {
         String v;
         if(claim.isAdminClaim()) {
-            v = "<div class=\"regioninfo\">" + plugin.admininfowindow + "</div>";
+            v = "<div class=\"regioninfo\">" + dynmapIntegration.admininfowindow + "</div>";
         } else {
-            v = "<div class=\"regioninfo\">" + plugin.infowindow + "</div>";
+            v = "<div class=\"regioninfo\">" + dynmapIntegration.infowindow + "</div>";
         }
         String ownerName = claim.getOwnerName();
         if (ownerName == null) ownerName = "";

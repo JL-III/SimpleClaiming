@@ -1,9 +1,17 @@
 package me.ryanhamshire.GriefPrevention.managers;
 
+import org.bukkit.configuration.file.FileConfiguration;
+
 public class ConfigManager {
 
-    //GriefPrevention config
+    FileConfiguration config;
 
-    //Dynmap config
+    public ConfigManager(FileConfiguration config) {
+        this.config = config;
+    }
+
+    public FileConfiguration getConfig() {
+        return config;
+    }
 
 }

@@ -19,6 +19,7 @@
 package me.ryanhamshire.GriefPrevention;
 
 import me.ryanhamshire.GriefPrevention.commands.ChungusCommand;
+import me.ryanhamshire.GriefPrevention.dynmap.DynmapIntegration;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.enums.MessageType;
 import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;
@@ -58,6 +59,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -80,8 +82,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class GriefPrevention extends JavaPlugin
-{
+public class GriefPrevention extends JavaPlugin {
     //for convenience, a reference to the instance of this plugin
     public static GriefPrevention instance;
     //for logging to the console and log file
@@ -270,6 +271,17 @@ public class GriefPrevention extends JavaPlugin
 
     //initializes well...   everything
     public void onEnable() {
+
+        //DYNMAP INTEGRATION
+        Plugin dynmap = getServer().getPluginManager().getPlugin("dynmap");
+        if(dynmap != null && dynmap.isEnabled()) {
+            getLogger().severe("Found Dynmap!  Enabling Dynmap integration...");
+
+            DynmapIntegration dynmapIntegration = new DynmapIntegration(this);
+
+
+
+        }
         instance = this;
         log = instance.getLogger();
 
