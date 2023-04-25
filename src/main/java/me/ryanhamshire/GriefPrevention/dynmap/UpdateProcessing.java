@@ -1,10 +1,14 @@
 package me.ryanhamshire.GriefPrevention.dynmap;
 
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import me.ryanhamshire.GriefPrevention.claim.Claim;
+import me.ryanhamshire.GriefPrevention.util.DataStore;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.dynmap.markers.AreaMarker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,28 +20,35 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
+import static me.ryanhamshire.GriefPrevention.dynmap.DynmapGriefPreventionPlugin.ADMIN_ID;
+
 public class UpdateProcessing {
-    public UpdateProcessing(@NotNull DynmapGriefPreventionPlugin main){
-        this.main = main;
-        showDebug = main.getConfig().getBoolean("debug", false);
+
+    private final GriefPrevention plugin;
+    private final Map<UUID, String> playerNameCache;
+    private final Pattern idPattern;
+    private boolean showDebug;
+
+    //TODO this is referencing the GriefPrevention class but still has ties to the old set up where this was a standalone plugin.
+    // The DynmapGriefPreventionPlugin class needs to be refactored to be an object in this plugin.
+
+    public UpdateProcessing(@NotNull GriefPrevention plugin){
+        this.plugin = plugin;
+        showDebug = plugin.getConfig().getBoolean("debug", false);
         this.playerNameCache = new TreeMap<>();
         this.idPattern = Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$");
     }
 
-    private final DynmapGriefPreventionPlugin main;
-    private final Map<UUID, String> playerNameCache;
-    private final Pattern idPattern;
-    private boolean showDebug;
 
     @Nullable ArrayList<Claim> getClaims(){
         ArrayList<Claim> claims;
         try {
             Field fld = DataStore.class.getDeclaredField("claims");
             fld.setAccessible(true);
-            Object o = fld.get(main.griefPrevention.dataStore);
+            Object o = fld.get(plugin.griefPrevention.dataStore);
             claims = (ArrayList<Claim>) o;
         } catch(NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
-            main.getLogger().warning("Error getting claims from reflection: " + e.getMessage());
+            plugin.getLogger().warning("Error getting claims from reflection: " + e.getMessage());
             return null;
         }
 
@@ -56,13 +67,13 @@ public class UpdateProcessing {
         };
 
         long startTime = System.currentTimeMillis();
-        runnable.runTask(main);
+        runnable.runTask(plugin);
 
         try {
             ArrayList<Claim> result = completableFuture.get(500L, TimeUnit.MILLISECONDS);
             if (showDebug) {
                 long timeTaken = System.currentTimeMillis() - startTime;
-                main.getLogger().info("getClaims() time taken: " + timeTaken);
+                plugin.getLogger().info("getClaims() time taken: " + timeTaken);
             }
             return result;
         }
@@ -96,16 +107,16 @@ public class UpdateProcessing {
             }
         }
         /* Now, review old map - anything left is gone */
-        for(final AreaMarker oldm : main.resareas.values()) {
+        for(final AreaMarker oldm : plugin.resareas.values()) {
             oldm.deleteMarker();
             deletions++;
         }
 
         /* And replace with new map */
-        main.resareas = newmap;
+        plugin.resareas = newmap;
 
         if (showDebug)
-            main.getLogger().info(String.format("claims: %s, child claims: %s, deletions: %s", parentClaims, childClaims, deletions));
+            plugin.getLogger().info(String.format("claims: %s, child claims: %s, deletions: %s", parentClaims, childClaims, deletions));
     }
 
     private void handleClaim(@NotNull Claim claim, Map<String, AreaMarker> newmap) {
@@ -137,9 +148,9 @@ public class UpdateProcessing {
         z[3] = l0.getZ();
         Long id = claim.getID();
         String markerid = "GP_" + Long.toHexString(id);
-        AreaMarker m = main.resareas.remove(markerid); /* Existing area? */
+        AreaMarker m = plugin.resareas.remove(markerid); /* Existing area? */
         if(m == null) {
-            m = main.set.createAreaMarker(markerid, owner, false, wname, x, z, false);
+            m = plugin.set.createAreaMarker(markerid, owner, false, wname, x, z, false);
             if(m == null) {
                 return;
             }
@@ -147,7 +158,7 @@ public class UpdateProcessing {
             m.setCornerLocations(x, z); /* Replace corner locations */
             m.setLabel(owner);   /* Update label */
         }
-        if(main.use3d) { /* If 3D? */
+        if(plugin.use3d) { /* If 3D? */
             m.setRangeY(l1.getY() + 1.0, l0.getY());
         }
         /* Set line and fill properties */
@@ -166,11 +177,11 @@ public class UpdateProcessing {
         if (owner == null) return;
         AreaStyle as = null;
 
-        if(!main.ownerstyle.isEmpty()) {
-            as = main.ownerstyle.get(owner.toLowerCase());
+        if(!plugin.ownerstyle.isEmpty()) {
+            as = plugin.ownerstyle.get(owner.toLowerCase());
         }
         if(as == null) {
-            as = main.defstyle;
+            as = plugin.defstyle;
         }
 
         int sc = 0xFF0000;
@@ -187,16 +198,16 @@ public class UpdateProcessing {
         }
     }
     private boolean isVisible(String owner, String worldname) {
-        if((main.visible != null) && (main.visible.size() > 0)) {
-            if((!main.visible.contains(owner)) && (!main.visible.contains("world:" + worldname)) &&
-                    (!main.visible.contains(worldname + "/" + owner))) {
+        if((plugin.visible != null) && (plugin.visible.size() > 0)) {
+            if((!plugin.visible.contains(owner)) && (!plugin.visible.contains("world:" + worldname)) &&
+                    (!plugin.visible.contains(worldname + "/" + owner))) {
                 return false;
             }
         }
 
-        if((main.hidden != null) && (main.hidden.size() > 0)) {
-            return !main.hidden.contains(owner) && !main.hidden.contains("world:" + worldname)
-                    && !main.hidden.contains(worldname + "/" + owner);
+        if((plugin.hidden != null) && (plugin.hidden.size() > 0)) {
+            return !plugin.hidden.contains(owner) && !plugin.hidden.contains("world:" + worldname)
+                    && !plugin.hidden.contains(worldname + "/" + owner);
         }
 
         return true;
@@ -206,9 +217,9 @@ public class UpdateProcessing {
     private String formatInfoWindow(@NotNull Claim claim) {
         String v;
         if(claim.isAdminClaim()) {
-            v = "<div class=\"regioninfo\">" + main.admininfowindow + "</div>";
+            v = "<div class=\"regioninfo\">" + plugin.admininfowindow + "</div>";
         } else {
-            v = "<div class=\"regioninfo\">" + main.infowindow + "</div>";
+            v = "<div class=\"regioninfo\">" + plugin.infowindow + "</div>";
         }
         String ownerName = claim.getOwnerName();
         if (ownerName == null) ownerName = "";
