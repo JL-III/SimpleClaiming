@@ -35,7 +35,7 @@ import me.ryanhamshire.GriefPrevention.tasks.PlayerKickBanTask;
 import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
 import me.ryanhamshire.GriefPrevention.chat.SpamAnalysisResult;
 import me.ryanhamshire.GriefPrevention.chat.SpamDetector;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import me.ryanhamshire.GriefPrevention.tasks.WelcomeTask;
 import me.ryanhamshire.GriefPrevention.chat.WordFinder;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;

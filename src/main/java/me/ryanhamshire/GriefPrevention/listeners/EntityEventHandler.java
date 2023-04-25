@@ -28,7 +28,7 @@ import me.ryanhamshire.GriefPrevention.events.PreventPvPEvent;
 import me.ryanhamshire.GriefPrevention.events.ProtectDeathDropsEvent;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;

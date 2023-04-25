@@ -28,7 +28,7 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.enums.PistonMode;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;

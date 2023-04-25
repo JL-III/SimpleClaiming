@@ -15,7 +15,7 @@ import me.ryanhamshire.GriefPrevention.tasks.PlayerRescueTask;
 import me.ryanhamshire.GriefPrevention.tasks.WelcomeTask;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import net.milkbowl.vault.economy.Economy;

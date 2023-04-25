@@ -27,7 +27,7 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
 import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 

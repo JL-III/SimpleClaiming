@@ -21,7 +21,7 @@ package me.ryanhamshire.GriefPrevention.tasks;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

@@ -21,17 +21,13 @@ class WorldGuardWrapper
 {
     private final WorldGuardPlugin worldGuard;
 
-    public WorldGuardWrapper() throws IllegalArgumentException, IllegalStateException, ClassCastException
-    {
+    public WorldGuardWrapper() throws IllegalArgumentException, IllegalStateException, ClassCastException {
         this.worldGuard = JavaPlugin.getPlugin(WorldGuardPlugin.class);
     }
 
-    public boolean canBuild(Location lesserCorner, Location greaterCorner, Player creatingPlayer)
-    {
-        try
-        {
-            if (lesserCorner.getWorld() == null)
-            {
+    public boolean canBuild(Location lesserCorner, Location greaterCorner, Player creatingPlayer) {
+        try {
+            if (lesserCorner.getWorld() == null) {
                 return true;
             }
 
@@ -39,14 +35,12 @@ class WorldGuardWrapper
             WorldGuardPlatform platform = WorldGuard.getInstance().getPlatform();
             World world = BukkitAdapter.adapt(lesserCorner.getWorld());
 
-            if (platform.getSessionManager().hasBypass(localPlayer, world))
-            {
+            if (platform.getSessionManager().hasBypass(localPlayer, world)) {
                 return true;
             }
 
             RegionManager manager = platform.getRegionContainer().get(world);
-            if (manager == null)
-            {
+            if (manager == null) {
                 return true;
             }
 
@@ -57,15 +51,13 @@ class WorldGuardWrapper
 
             return manager.getApplicableRegions(tempRegion).queryState(localPlayer, Flags.BUILD) == StateFlag.State.ALLOW;
         }
-        catch (Throwable rock)
-        {
+        catch (Throwable rock) {
             GriefPrevention.AddLogEntry("WorldGuard was found but unable to hook into. It could be that you're " +
                     "using an outdated version or WorldEdit broke their API... again." +
                     "Consider updating/downgrading/removing WorldGuard or disable WorldGuard integration in GP's config " +
                     "(CreationRequiresWorldGuardBuildPermission). If you're going to report this please be kind because " +
                     "WorldEdit's API hasn't been :c", CustomLogEntryTypes.Debug, false);
         }
-
         return true;
     }
 }

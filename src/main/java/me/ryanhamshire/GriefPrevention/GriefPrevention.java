@@ -18,8 +18,6 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import me.ryanhamshire.GriefPrevention.visualization.BoundaryVisualization;
-import me.ryanhamshire.GriefPrevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.enums.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.enums.Messages;
 import me.ryanhamshire.GriefPrevention.listeners.EconomyHandler;
@@ -27,41 +25,31 @@ import me.ryanhamshire.GriefPrevention.listeners.EntityEventHandler;
 import me.ryanhamshire.GriefPrevention.tasks.EntityCleanupTask;
 import me.ryanhamshire.GriefPrevention.util.BlockSnapshot;
 import me.ryanhamshire.GriefPrevention.util.DataStore;
-import me.ryanhamshire.GriefPrevention.util.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.claim.Claim;
 import me.ryanhamshire.GriefPrevention.claim.ClaimPermission;
-import me.ryanhamshire.GriefPrevention.claim.CreateClaimResult;
 import me.ryanhamshire.GriefPrevention.enums.ClaimsMode;
 import me.ryanhamshire.GriefPrevention.enums.PistonMode;
-import me.ryanhamshire.GriefPrevention.enums.ShovelMode;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
-import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.listeners.BlockEventHandler;
 import me.ryanhamshire.GriefPrevention.listeners.PlayerEventHandler;
-import me.ryanhamshire.GriefPrevention.tasks.AutoExtendClaimTask;
 import me.ryanhamshire.GriefPrevention.tasks.CheckForPortalTrapTask;
 import me.ryanhamshire.GriefPrevention.tasks.DeliverClaimBlocksTask;
 import me.ryanhamshire.GriefPrevention.tasks.FindUnusedClaimsTask;
-import me.ryanhamshire.GriefPrevention.tasks.PlayerRescueTask;
 import me.ryanhamshire.GriefPrevention.tasks.PvPImmunityValidationTask;
-import me.ryanhamshire.GriefPrevention.tasks.RestoreNatureProcessingTask;
 import me.ryanhamshire.GriefPrevention.tasks.SendPlayerMessageTask;
-import me.ryanhamshire.GriefPrevention.tasks.WelcomeTask;
 import me.ryanhamshire.GriefPrevention.util.CustomLogger;
 import me.ryanhamshire.GriefPrevention.util.DatabaseDataStore;
 import me.ryanhamshire.GriefPrevention.util.FlatFileDataStore;
 import me.ryanhamshire.GriefPrevention.util.IgnoreLoaderThread;
 import me.ryanhamshire.GriefPrevention.util.PendingItemProtection;
 import me.ryanhamshire.GriefPrevention.util.PlayerData;
-import me.ryanhamshire.GriefPrevention.util.TextMode;
-import net.milkbowl.vault.economy.Economy;
+import me.ryanhamshire.GriefPrevention.enums.TextMode;
 import org.bukkit.BanList;
 import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
-import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -70,8 +58,6 @@ import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.AnimalTamer;
@@ -94,10 +80,8 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -1068,19 +1052,19 @@ public class GriefPrevention extends JavaPlugin
         Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
         if (claim == null)
         {
-            GriefPrevention.sendMessage(player, TextMode.Instr, Messages.AbandonClaimMissing);
+            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.AbandonClaimMissing);
         }
 
         //verify ownership
         else if (claim.checkPermission(player, ClaimPermission.Edit, null) != null)
         {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.NotYourClaim);
+            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.NotYourClaim);
         }
 
         //warn if has children and we're not explicitly deleting a top level claim
         else if (claim.children.size() > 0 && !deleteTopLevelClaim)
         {
-            GriefPrevention.sendMessage(player, TextMode.Instr, Messages.DeleteTopLevelClaim);
+            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.DeleteTopLevelClaim);
             return true;
         }
         else
@@ -1093,8 +1077,8 @@ public class GriefPrevention extends JavaPlugin
             if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
             {
                 GriefPrevention.AddLogEntry(player.getName() + " abandoned a claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()));
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
-                GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
+                GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), Messages.UnclaimCleanupWarning);
+//                GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
             }
 
             //adjust claim blocks when abandoning a top level claim
@@ -1105,7 +1089,7 @@ public class GriefPrevention extends JavaPlugin
 
             //tell the player how many claim blocks he has left
             int remainingBlocks = playerData.getRemainingClaimBlocks();
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.AbandonSuccess, String.valueOf(remainingBlocks));
+            GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.AbandonSuccess, String.valueOf(remainingBlocks));
 
             //revert any current visualization
             playerData.setVisibleBoundaries(null);
@@ -1132,7 +1116,7 @@ public class GriefPrevention extends JavaPlugin
             permission = recipientName.substring(1, recipientName.length() - 1);
             if (permission == null || permission.isEmpty())
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.InvalidPermissionID);
+                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.InvalidPermissionID);
                 return;
             }
         }
@@ -1142,7 +1126,7 @@ public class GriefPrevention extends JavaPlugin
             boolean isPermissionFormat = recipientName.contains(".");
             if (otherPlayer == null && !recipientName.equals("public") && !recipientName.equals("all") && !isPermissionFormat)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
+                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.PlayerNotFound2);
                 return;
             }
 
@@ -1174,7 +1158,7 @@ public class GriefPrevention extends JavaPlugin
             //check permission here
             if (claim.checkPermission(player, ClaimPermission.Manage, null) != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
+                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.NoPermissionTrust, claim.getOwnerName());
                 return;
             }
 
@@ -1200,7 +1184,7 @@ public class GriefPrevention extends JavaPlugin
             //error message for trying to grant a permission the player doesn't have
             if (errorMessage != null)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CantGrantThatPermission);
+                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.CantGrantThatPermission);
                 return;
             }
 
@@ -1210,7 +1194,7 @@ public class GriefPrevention extends JavaPlugin
         //if we didn't determine which claims to modify, tell the player to be specific
         if (targetClaims.size() == 0)
         {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.GrantPermissionNoClaim);
+            GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.GrantPermissionNoClaim);
             return;
         }
 
@@ -1282,7 +1266,7 @@ public class GriefPrevention extends JavaPlugin
             location = this.dataStore.getMessage(Messages.LocationCurrentClaim);
         }
 
-        GriefPrevention.sendMessage(player, TextMode.Success, Messages.GrantPermissionConfirmation, recipientName, permissionDescription, location);
+        GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.GrantPermissionConfirmation, recipientName, permissionDescription, location);
     }
 
     //helper method to resolve a player by name
@@ -1445,7 +1429,7 @@ public class GriefPrevention extends JavaPlugin
             playerData.pvpImmune = true;
 
             //inform the player after he finishes respawning
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.PvPImmunityStart, 5L);
+            GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.PvPImmunityStart, 5L);
 
             //start a task to re-check this player's inventory every minute until his immunity is gone
             PvPImmunityValidationTask task = new PvPImmunityValidationTask(player);
@@ -1700,50 +1684,50 @@ public class GriefPrevention extends JavaPlugin
     //restores nature in multiple chunks, as described by a claim instance
     //this restores all chunks which have ANY number of claim blocks from this claim in them
     //if the claim is still active (in the data store), then the claimed blocks will not be changed (only the area bordering the claim)
-    public void restoreClaim(Claim claim, long delayInTicks)
-    {
-        //admin claims aren't automatically cleaned up when deleted or abandoned
-        if (claim.isAdminClaim()) return;
+//    public void restoreClaim(Claim claim, long delayInTicks)
+//    {
+//        //admin claims aren't automatically cleaned up when deleted or abandoned
+//        if (claim.isAdminClaim()) return;
+//
+//        //it's too expensive to do this for huge claims
+//        if (claim.getArea() > 10000) return;
+//
+//        ArrayList<Chunk> chunks = claim.getChunks();
+//        for (Chunk chunk : chunks)
+//        {
+//            this.restoreChunk(chunk, this.getSeaLevel(chunk.getWorld()) - 15, false, delayInTicks, null);
+//        }
+//    }
 
-        //it's too expensive to do this for huge claims
-        if (claim.getArea() > 10000) return;
 
-        ArrayList<Chunk> chunks = claim.getChunks();
-        for (Chunk chunk : chunks)
-        {
-            this.restoreChunk(chunk, this.getSeaLevel(chunk.getWorld()) - 15, false, delayInTicks, null);
-        }
-    }
-
-
-    public void restoreChunk(Chunk chunk, int miny, boolean aggressiveMode, long delayInTicks, Player playerReceivingVisualization)
-    {
-        //build a snapshot of this chunk, including 1 block boundary outside of the chunk all the way around
-        int maxHeight = chunk.getWorld().getMaxHeight();
-        BlockSnapshot[][][] snapshots = new BlockSnapshot[18][maxHeight][18];
-        Block startBlock = chunk.getBlock(0, 0, 0);
-        Location startLocation = new Location(chunk.getWorld(), startBlock.getX() - 1, 0, startBlock.getZ() - 1);
-        for (int x = 0; x < snapshots.length; x++)
-        {
-            for (int z = 0; z < snapshots[0][0].length; z++)
-            {
-                for (int y = 0; y < snapshots[0].length; y++)
-                {
-                    Block block = chunk.getWorld().getBlockAt(startLocation.getBlockX() + x, startLocation.getBlockY() + y, startLocation.getBlockZ() + z);
-                    snapshots[x][y][z] = new BlockSnapshot(block.getLocation(), block.getType(), block.getBlockData());
-                }
-            }
-        }
-
-        //create task to process those data in another thread
-        Location lesserBoundaryCorner = chunk.getBlock(0, 0, 0).getLocation();
-        Location greaterBoundaryCorner = chunk.getBlock(15, 0, 15).getLocation();
-
-        //create task
-        //when done processing, this task will create a main thread task to actually update the world with processing results
-        RestoreNatureProcessingTask task = new RestoreNatureProcessingTask(snapshots, miny, chunk.getWorld().getEnvironment(), lesserBoundaryCorner.getBlock().getBiome(), lesserBoundaryCorner, greaterBoundaryCorner, this.getSeaLevel(chunk.getWorld()), aggressiveMode, GriefPrevention.instance.creativeRulesApply(lesserBoundaryCorner), playerReceivingVisualization);
-        GriefPrevention.instance.getServer().getScheduler().runTaskLaterAsynchronously(GriefPrevention.instance, task, delayInTicks);
-    }
+//    public void restoreChunk(Chunk chunk, int miny, boolean aggressiveMode, long delayInTicks, Player playerReceivingVisualization)
+//    {
+//        //build a snapshot of this chunk, including 1 block boundary outside of the chunk all the way around
+//        int maxHeight = chunk.getWorld().getMaxHeight();
+//        BlockSnapshot[][][] snapshots = new BlockSnapshot[18][maxHeight][18];
+//        Block startBlock = chunk.getBlock(0, 0, 0);
+//        Location startLocation = new Location(chunk.getWorld(), startBlock.getX() - 1, 0, startBlock.getZ() - 1);
+//        for (int x = 0; x < snapshots.length; x++)
+//        {
+//            for (int z = 0; z < snapshots[0][0].length; z++)
+//            {
+//                for (int y = 0; y < snapshots[0].length; y++)
+//                {
+//                    Block block = chunk.getWorld().getBlockAt(startLocation.getBlockX() + x, startLocation.getBlockY() + y, startLocation.getBlockZ() + z);
+//                    snapshots[x][y][z] = new BlockSnapshot(block.getLocation(), block.getType(), block.getBlockData());
+//                }
+//            }
+//        }
+//
+//        //create task to process those data in another thread
+//        Location lesserBoundaryCorner = chunk.getBlock(0, 0, 0).getLocation();
+//        Location greaterBoundaryCorner = chunk.getBlock(15, 0, 15).getLocation();
+//
+//        //create task
+//        //when done processing, this task will create a main thread task to actually update the world with processing results
+////        RestoreNatureProcessingTask task = new RestoreNatureProcessingTask(snapshots, miny, chunk.getWorld().getEnvironment(), lesserBoundaryCorner.getBlock().getBiome(), lesserBoundaryCorner, greaterBoundaryCorner, this.getSeaLevel(chunk.getWorld()), aggressiveMode, GriefPrevention.instance.creativeRulesApply(lesserBoundaryCorner), playerReceivingVisualization);
+////        GriefPrevention.instance.getServer().getScheduler().runTaskLaterAsynchronously(GriefPrevention.instance, task, delayInTicks);
+//    }
 
     private Set<Material> parseMaterialListFromConfig(List<String> stringsToParse)
     {
