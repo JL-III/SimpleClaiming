@@ -1378,10 +1378,10 @@ public abstract class DataStore
             this.deleteClaim(claim, releasePets);
 
             //if in a creative mode world, delete the claim
-            if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.instance.restoreClaim(claim, 0);
-            }
+//            if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
+//            {
+//                GriefPrevention.instance.restoreClaim(claim, 0);
+//            }
         }
     }
 
@@ -1423,14 +1423,14 @@ public abstract class DataStore
             {
                 if (newWidth < GriefPrevention.instance.config_claims_minWidth || newHeight < GriefPrevention.instance.config_claims_minWidth)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeClaimTooNarrow, String.valueOf(GriefPrevention.instance.config_claims_minWidth));
+                    GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.ResizeClaimTooNarrow, String.valueOf(GriefPrevention.instance.config_claims_minWidth));
                     return;
                 }
 
                 int newArea = newWidth * newHeight;
                 if (newArea < GriefPrevention.instance.config_claims_minArea)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeClaimInsufficientArea, String.valueOf(GriefPrevention.instance.config_claims_minArea));
+                    GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.ResizeClaimInsufficientArea, String.valueOf(GriefPrevention.instance.config_claims_minArea));
                     return;
                 }
             }
@@ -1443,7 +1443,7 @@ public abstract class DataStore
 
                 if (blocksRemainingAfter < 0)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeNeedMoreBlocks, String.valueOf(Math.abs(blocksRemainingAfter)));
+                    GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.ResizeNeedMoreBlocks, String.valueOf(Math.abs(blocksRemainingAfter)));
                     this.tryAdvertiseAdminAlternatives(player);
                     return;
                 }
@@ -1517,29 +1517,26 @@ public abstract class DataStore
             }
 
             //inform about success, visualize, communicate remaining blocks available
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.ClaimResizeSuccess, String.valueOf(claimBlocksRemaining));
+            GriefPrevention.sendMessage(player, TextMode.Success.getColor(), Messages.ClaimResizeSuccess, String.valueOf(claimBlocksRemaining));
             BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
 
             //if resizing someone else's claim, make a log entry
-            if (!player.getUniqueId().equals(playerData.claimResizing.ownerID) && playerData.claimResizing.parent == null)
-            {
+            if (!player.getUniqueId().equals(playerData.claimResizing.ownerID) && playerData.claimResizing.parent == null) {
                 GriefPrevention.AddLogEntry(player.getName() + " resized " + playerData.claimResizing.getOwnerName() + "'s claim at " + GriefPrevention.getfriendlyLocationString(playerData.claimResizing.lesserBoundaryCorner) + ".");
             }
 
             //if increased to a sufficiently large size and no subdivisions yet, send subdivision instructions
-            if (oldClaim.getArea() < 1000 && result.claim.getArea() >= 1000 && result.claim.children.size() == 0 && !player.hasPermission("griefprevention.adminclaims"))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.BecomeMayor, 200L);
-                GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
+            if (oldClaim.getArea() < 1000 && result.claim.getArea() >= 1000 && result.claim.children.size() == 0 && !player.hasPermission("griefprevention.adminclaims")) {
+                GriefPrevention.sendMessage(player, TextMode.Info.getColor(), Messages.BecomeMayor, 200L);
+                GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
             }
 
             //if in a creative mode world and shrinking an existing claim, restore any unclaimed area
-            if (smaller && GriefPrevention.instance.creativeRulesApply(oldClaim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
-                GriefPrevention.instance.restoreClaim(oldClaim, 20L * 60 * 2);  //2 minutes
-                GriefPrevention.AddLogEntry(player.getName() + " shrank a claim @ " + GriefPrevention.getfriendlyLocationString(playerData.claimResizing.getLesserBoundaryCorner()));
-            }
+//            if (smaller && GriefPrevention.instance.creativeRulesApply(oldClaim.getLesserBoundaryCorner())) {
+//                GriefPrevention.sendMessage(player, TextMode.Warn.getColor(), Messages.UnclaimCleanupWarning);
+////                GriefPrevention.instance.restoreClaim(oldClaim, 20L * 60 * 2);  //2 minutes
+//                GriefPrevention.AddLogEntry(player.getName() + " shrank a claim @ " + GriefPrevention.getfriendlyLocationString(playerData.claimResizing.getLesserBoundaryCorner()));
+//            }
 
             //clean up
             playerData.claimResizing = null;
@@ -1550,14 +1547,14 @@ public abstract class DataStore
             if (result.claim != null)
             {
                 //inform player
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeFailOverlap);
+                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.ResizeFailOverlap);
 
                 //show the player the conflicting claim
                 BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeFailOverlapRegion);
+                GriefPrevention.sendMessage(player, TextMode.Err.getColor(), Messages.ResizeFailOverlapRegion);
             }
         }
     }
@@ -1567,15 +1564,15 @@ public abstract class DataStore
     {
         if (player.hasPermission("griefprevention.adminclaims") && player.hasPermission("griefprevention.adjustclaimblocks"))
         {
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.AdvertiseACandACB);
+            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), Messages.AdvertiseACandACB);
         }
         else if (player.hasPermission("griefprevention.adminclaims"))
         {
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.AdvertiseAdminClaims);
+            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), Messages.AdvertiseAdminClaims);
         }
         else if (player.hasPermission("griefprevention.adjustclaimblocks"))
         {
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.AdvertiseACB);
+            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), Messages.AdvertiseACB);
         }
     }
 

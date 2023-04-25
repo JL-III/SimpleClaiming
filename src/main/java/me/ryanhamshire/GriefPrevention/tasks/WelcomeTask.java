@@ -11,8 +11,7 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
-public class WelcomeTask implements Runnable
-{
+public class WelcomeTask implements Runnable {
     private final Player player;
 
     public WelcomeTask(Player player)
@@ -26,8 +25,8 @@ public class WelcomeTask implements Runnable
         if (!this.player.isOnline()) return;
 
         //offer advice and a helpful link
-        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.AvoidGriefClaimLand);
-        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.AvoidGriefClaimLand);
+        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
 
         //give the player a reference book for later
         if (GriefPrevention.instance.config_claims_supplyPlayerManual) {

@@ -34,8 +34,7 @@ import org.bukkit.inventory.EquipmentSlot;
 //tells a player about how many claim blocks he has, etc
 //implemented as a task so that it can be delayed
 //otherwise, it's spammy when players mouse-wheel past the shovel in their hot bars
-public class EquipShovelProcessingTask implements Runnable
-{
+public class EquipShovelProcessingTask implements Runnable {
     //player data
     private final Player player;
 
@@ -45,43 +44,36 @@ public class EquipShovelProcessingTask implements Runnable
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         //if he's not holding the golden shovel anymore, do nothing
         if (GriefPrevention.instance.getItemInHand(player, EquipmentSlot.HAND).getType() != GriefPrevention.instance.config_claims_modificationTool)
             return;
-
         PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
-
         //reset any work he might have been doing
         playerData.lastShovelLocation = null;
         playerData.claimResizing = null;
 
         //always reset to basic claims mode
-        if (playerData.shovelMode != ShovelMode.Basic)
-        {
+        if (playerData.shovelMode != ShovelMode.Basic) {
             playerData.shovelMode = ShovelMode.Basic;
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.ShovelBasicClaimMode);
+            GriefPrevention.sendMessage(player, TextMode.Info.getColor(), Messages.ShovelBasicClaimMode);
         }
 
         //tell him how many claim blocks he has available
         int remainingBlocks = playerData.getRemainingClaimBlocks();
-        GriefPrevention.sendMessage(player, TextMode.Instr, Messages.RemainingBlocks, String.valueOf(remainingBlocks));
+        GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.RemainingBlocks, String.valueOf(remainingBlocks));
 
         //link to a video demo of land claiming, based on world type
-        if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
-        {
-            GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
+        if (GriefPrevention.instance.creativeRulesApply(player.getLocation())) {
+            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
         }
-        else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
-        {
-            GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+        else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld())) {
+            GriefPrevention.sendMessage(player, TextMode.Instr.getColor(), Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
         }
 
         //if standing in a claim owned by the player, visualize it
         Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), true, playerData.lastClaim);
-        if (claim != null && claim.checkPermission(player, ClaimPermission.Edit, null) == null)
-        {
+        if (claim != null && claim.checkPermission(player, ClaimPermission.Edit, null) == null) {
             playerData.lastClaim = claim;
             BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM);
         }
