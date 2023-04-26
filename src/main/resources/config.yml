@@ -1,4 +1,121 @@
-
+greifprevention:
+  claims:
+    investigation-tool: STICK
+    modification-tool: GOLDEN_SHOVEL
+    prevent-global-monster-eggs: true
+    prevent-theft: true
+    protect-creatures: true
+    protect-horses: true
+    protect-donkeys: true
+    protect-llamas: true
+    prevent-button-switches: true
+    lock-wooden-doors: false
+    lock-trap-doors: false
+    prevent-nonplayer-created-portals: false
+    enderpearls-require-access-trust: true
+    raid-triggers-require-build-trust: true
+    initial-blocks: 100
+    blocks-accrued-per-hour: 100
+    claim-blocks-accrued-per-hour-default: ??
+    max-accrued-blocks: 80000
+    accrued-idle-threshold: 0
+    accrued-idle-percent: 0
+    abandon-return-ratio: 1.0D
+    automatic-newplayer-claims-radius: 4
+    extend-into-ground-distance: 5
+    minimum-width: 5
+    minimum-area: 100
+    maximum-depth: -10000
+    allow-trapped-admin-claims: false
+    maximum-number-of-claims-per-player: 0
+    creation-requires-worldguard-build-permission: true
+    villager-trading-requires-permission: true
+    commands-requiring-access-trust: "/sethome"
+    deliver-manuals: false
+    manual-deliver-delay-seconds: 30
+    ravagers-break-blocks: true
+    fire-spreads-in-claims: false
+    fire-damages-in-claims: false
+    lecturn-reading-requires-access-trust: false
+    expiration:
+      chest-claim-days: 7
+      unused-claim-days: 14
+      automatic-nature-restoration-survival-worlds: false
+      all-claims:
+        days-inactive: 60
+        except-when-owner-has-total-claim-blocks: 10000
+        except-when-owner-has-bonus-claim-blocks: 5000
+  spam:
+    enabled: true
+    login-cooldown-seconds: 60
+    login-logout-notifications-per-minute: 5
+    warning-message: "Please reduce your noise level, Spammers will be banned."
+    allowed-ip-addresses: "1.2.3.4; 5.6.7.8"
+    ban-offenders: true
+    ban-message: "Banned for spam."
+    chat-slash-commands: "/me;/global;/local"
+    death-message-cooldown-seconds: 120
+    logout-delay-message-in-seconds: 0
+  pvp:
+    protect-players-in-land-claims:
+      player-owned-claims: true
+      administrative-claims: true
+      administrative-subdivisions: true
+    allow-lava-dump-near-other-players:
+      pvp-worlds: true
+      non-pvp-worlds: false
+    allow-flint-and-steel-near-other-players:
+      pvp-worlds: true
+      non-pvp-worlds: false
+    protect-pets-outside-land-claims: false
+    protect-freshpspawns: true
+    punish-logout: true
+    combat-timeout-seconds: 15
+    allow-combat-itemdrop: false
+    blocked-slash-commands: "/home;/vanish;/spawn;/tpa"
+  economy:
+    claimblocks-max-bonus: 0
+    claimblocks-purchase-cost: 0
+    claimblocks-sell-value: 0
+  protect-items-dropped-on-death:
+    pvp-worlds: false
+    non-pvp-worlds: true
+  block-land-claim-explosions: true
+  block-surface-creeper-explosions: true
+  block-surface-other-explosions: true
+  limit-sky-trees: true
+  limit-tree-growth: false
+  piston-explosion-sound: true
+  piston-movement: "CLAIMS_ONLY"
+  fire-spreads: false
+  fire-destoys: false
+  admins-get-whispers: true
+  admins-get-sign-notifications: true
+  whisper-commands: "/tell;/pm;/r;/whisper;/msg"
+  visualization-anti-cheat-compat-mode: false
+  smart-ban: false
+  mute-new-players-using-banned-words: true
+  max-players-per-ip-address: 3
+  silence-bans: false
+  endermen-move-blocks: false
+  silverfish-break-blocks: false
+  creatures-trample-crops: false
+  rabbits-eat-crops: true
+  hardmode-zombies-break-doors: false
+  use-ban-command: false
+  ban-command-pattern: "ban %name% %reason%"
+  database:
+    url: ""
+    username: ""
+    password: ""
+  abridged-logs:
+    days-to-keep: 7
+    included-entry-types:
+      social-activity: true
+      suspicious-activity: true
+      administrative-activity: true
+      debug: false
+      muted-chat-messages: true
 
 # Dynmap
 update:
