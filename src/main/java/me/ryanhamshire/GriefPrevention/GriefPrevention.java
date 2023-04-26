@@ -657,12 +657,6 @@ public class GriefPrevention extends JavaPlugin {
         return true;
     }
 
-    //checks whether players siege in a world
-    public boolean siegeEnabledForWorld(World world)
-    {
-        return configManager.config_siege_enabledWorlds.contains(world);
-    }
-
     //moves a player from the claim he's in to a nearby wilderness location
     public Location ejectPlayer(Player player)
     {

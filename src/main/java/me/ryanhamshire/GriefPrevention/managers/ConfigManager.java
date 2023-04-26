@@ -34,13 +34,17 @@ public class ConfigManager {
     public boolean config_claims_preventGlobalMonsterEggs; //whether monster eggs can be placed regardless of trust.
     public boolean config_claims_preventTheft;                        //whether containers and crafting blocks are protectable
     public boolean config_claims_protectCreatures;                    //whether claimed animals may be injured by players without permission
+    //TODO this config option can be converted to an array list instead of individual booleans
     public boolean config_claims_protectHorses;                        //whether horses on a claim should be protected by that claim's rules
     public boolean config_claims_protectDonkeys;                    //whether donkeys on a claim should be protected by that claim's rules
     public boolean config_claims_protectLlamas;                        //whether llamas on a claim should be protected by that claim's rules
     public boolean config_claims_preventButtonsSwitches;            //whether buttons and switches are protectable
+
+    //TODO this config option can be converted to an array list instead of individual booleans
     public boolean config_claims_lockWoodenDoors;                    //whether wooden doors should be locked by default (require /accesstrust)
     public boolean config_claims_lockTrapDoors;                        //whether trap doors should be locked by default (require /accesstrust)
     public boolean config_claims_lockFenceGates;                    //whether fence gates should be locked by default (require /accesstrust)
+
     public boolean config_claims_preventNonPlayerCreatedPortals;    // whether portals where we cannot determine the creating player should be prevented from creation in claims
     public boolean config_claims_enderPearlsRequireAccessTrust;        //whether teleporting into a claim with a pearl requires access trust
     public boolean config_claims_raidTriggersRequireBuildTrust;      //whether raids are triggered by a player that doesn't have build permission in that claim
@@ -82,10 +86,6 @@ public class ConfigManager {
 
     public boolean config_claims_lecternReadingRequiresAccessTrust;                    //reading lecterns requires access trust
 
-    public ArrayList<World> config_siege_enabledWorlds;                //whether or not /siege is enabled on this server
-    public Set<Material> config_siege_blocks;                    //which blocks will be breakable in siege mode
-    public int config_siege_doorsOpenSeconds;  // how before claim is re-secured after siege win
-    public int config_siege_cooldownEndInMinutes;
     public boolean config_spam_enabled;                                //whether or not to monitor for spam
     public int config_spam_loginCooldownSeconds;                    //how long players must wait between logins.  combats login spam.
     public int config_spam_loginLogoutNotificationsPerMinute;        //how many login/logout notifications to show per minute (global, not per player)
@@ -166,10 +166,6 @@ public class ConfigManager {
     public boolean config_logs_debugEnabled;
     public boolean config_logs_mutedChatEnabled;
 
-    //ban management plugin interop settings
-    public boolean config_ban_useCommand;
-    public String config_ban_commandFormat;
-
     public String databaseUrl;
     public String databaseUserName;
     public String databasePassword;
@@ -186,8 +182,6 @@ public class ConfigManager {
     public void loadConfig() {
         //load the config if it exists
         FileConfiguration outConfig = new YamlConfiguration();
-        outConfig.options().header("Default values are perfect for most servers.  If you want to customize and have a question, look for the answer here first: http://dev.bukkit.org/bukkit-plugins/grief-prevention/pages/setup-and-configuration/");
-
         //read configuration settings (note defaults)
         int configVersion = config.getInt("GriefPrevention.ConfigVersion", 0);
 
@@ -408,8 +402,6 @@ public class ConfigManager {
         this.config_creaturesTrampleCrops = config.getBoolean("GriefPrevention.CreaturesTrampleCrops", false);
         this.config_rabbitsEatCrops = config.getBoolean("GriefPrevention.RabbitsEatCrops", true);
         this.config_zombiesBreakDoors = config.getBoolean("GriefPrevention.HardModeZombiesBreakDoors", false);
-        this.config_ban_useCommand = config.getBoolean("GriefPrevention.UseBanCommand", false);
-        this.config_ban_commandFormat = config.getString("GriefPrevention.BanCommandPattern", "ban %name% %reason%");
 
         //default for claim investigation tool
         String investigationToolMaterialName = Material.STICK.name();
@@ -439,88 +431,8 @@ public class ConfigManager {
             this.config_claims_modificationTool = Material.GOLDEN_SHOVEL;
         }
 
-        //default for siege worlds list
-        ArrayList<String> defaultSiegeWorldNames = new ArrayList<>();
-
-        //get siege world names from the config file
-        List<String> siegeEnabledWorldNames = config.getStringList("GriefPrevention.Siege.Worlds");
-        if (siegeEnabledWorldNames == null)
-        {
-            siegeEnabledWorldNames = defaultSiegeWorldNames;
-        }
-
-        //validate that list
-        this.config_siege_enabledWorlds = new ArrayList<>();
-        for (String worldName : siegeEnabledWorldNames)
-        {
-            World world = griefPrevention.getServer().getWorld(worldName);
-            if (world == null)
-            {
-                GriefPrevention.AddLogEntry("Error: Siege Configuration: There's no world named \"" + worldName + "\".  Please update your config.yml.");
-            }
-            else
-            {
-                this.config_siege_enabledWorlds.add(world);
-            }
-        }
-
-//        //default siege blocks
-//        this.config_siege_blocks = EnumSet.noneOf(Material.class);
-//        this.config_siege_blocks.add(Material.DIRT);
-//        this.config_siege_blocks.add(Material.GRASS_BLOCK);
-//        this.config_siege_blocks.add(Material.GRASS);
-//        this.config_siege_blocks.add(Material.FERN);
-//        this.config_siege_blocks.add(Material.DEAD_BUSH);
-//        this.config_siege_blocks.add(Material.COBBLESTONE);
-//        this.config_siege_blocks.add(Material.GRAVEL);
-//        this.config_siege_blocks.add(Material.SAND);
-//        this.config_siege_blocks.add(Material.GLASS);
-//        this.config_siege_blocks.add(Material.GLASS_PANE);
-//        this.config_siege_blocks.add(Material.OAK_PLANKS);
-//        this.config_siege_blocks.add(Material.SPRUCE_PLANKS);
-//        this.config_siege_blocks.add(Material.BIRCH_PLANKS);
-//        this.config_siege_blocks.add(Material.JUNGLE_PLANKS);
-//        this.config_siege_blocks.add(Material.ACACIA_PLANKS);
-//        this.config_siege_blocks.add(Material.DARK_OAK_PLANKS);
-//        this.config_siege_blocks.add(Material.WHITE_WOOL);
-//        this.config_siege_blocks.add(Material.ORANGE_WOOL);
-//        this.config_siege_blocks.add(Material.MAGENTA_WOOL);
-//        this.config_siege_blocks.add(Material.LIGHT_BLUE_WOOL);
-//        this.config_siege_blocks.add(Material.YELLOW_WOOL);
-//        this.config_siege_blocks.add(Material.LIME_WOOL);
-//        this.config_siege_blocks.add(Material.PINK_WOOL);
-//        this.config_siege_blocks.add(Material.GRAY_WOOL);
-//        this.config_siege_blocks.add(Material.LIGHT_GRAY_WOOL);
-//        this.config_siege_blocks.add(Material.CYAN_WOOL);
-//        this.config_siege_blocks.add(Material.PURPLE_WOOL);
-//        this.config_siege_blocks.add(Material.BLUE_WOOL);
-//        this.config_siege_blocks.add(Material.BROWN_WOOL);
-//        this.config_siege_blocks.add(Material.GREEN_WOOL);
-//        this.config_siege_blocks.add(Material.RED_WOOL);
-//        this.config_siege_blocks.add(Material.BLACK_WOOL);
-//        this.config_siege_blocks.add(Material.SNOW);
-
         List<String> breakableBlocksList;
 
-        //try to load the list from the config file
-        if (config.isList("GriefPrevention.Siege.BreakableBlocks"))
-        {
-            breakableBlocksList = config.getStringList("GriefPrevention.Siege.BreakableBlocks");
-
-            //load materials
-            this.config_siege_blocks = griefPrevention.parseMaterialListFromConfig(breakableBlocksList);
-        }
-        //if it fails, use default siege block list instead
-        else
-        {
-            breakableBlocksList = this.config_siege_blocks.stream().map(Material::name).collect(Collectors.toList());
-        }
-
-        this.config_siege_doorsOpenSeconds = config.getInt("GriefPrevention.Siege.DoorsOpenDelayInSeconds", 5 * 60);
-        this.config_siege_cooldownEndInMinutes = config.getInt("GriefPrevention.Siege.CooldownEndInMinutes", 60);
-        this.config_pvp_noCombatInPlayerLandClaims = config.getBoolean("GriefPrevention.PvP.ProtectPlayersInLandClaims.PlayerOwnedClaims", this.config_siege_enabledWorlds.size() == 0);
-        this.config_pvp_noCombatInAdminLandClaims = config.getBoolean("GriefPrevention.PvP.ProtectPlayersInLandClaims.AdministrativeClaims", this.config_siege_enabledWorlds.size() == 0);
-        this.config_pvp_noCombatInAdminSubdivisions = config.getBoolean("GriefPrevention.PvP.ProtectPlayersInLandClaims.AdministrativeSubdivisions", this.config_siege_enabledWorlds.size() == 0);
         this.config_pvp_allowLavaNearPlayers = config.getBoolean("GriefPrevention.PvP.AllowLavaDumpingNearOtherPlayers.PvPWorlds", true);
         this.config_pvp_allowLavaNearPlayers_NonPvp = config.getBoolean("GriefPrevention.PvP.AllowLavaDumpingNearOtherPlayers.NonPvPWorlds", false);
         this.config_pvp_allowFireNearPlayers = config.getBoolean("GriefPrevention.PvP.AllowFlintAndSteelNearOtherPlayers.PvPWorlds", true);
@@ -657,10 +569,6 @@ public class ConfigManager {
         outConfig.set("GriefPrevention.MaxPlayersPerIpAddress", this.config_ipLimit);
         outConfig.set("GriefPrevention.SilenceBans", this.config_silenceBans);
 
-        outConfig.set("GriefPrevention.Siege.Worlds", siegeEnabledWorldNames);
-        outConfig.set("GriefPrevention.Siege.BreakableBlocks", breakableBlocksList);
-        outConfig.set("GriefPrevention.Siege.DoorsOpenDelayInSeconds", this.config_siege_doorsOpenSeconds);
-        outConfig.set("GriefPrevention.Siege.CooldownEndInMinutes", this.config_siege_cooldownEndInMinutes);
         outConfig.set("GriefPrevention.EndermenMoveBlocks", this.config_endermenMoveBlocks);
         outConfig.set("GriefPrevention.SilverfishBreakBlocks", this.config_silverfishBreakBlocks);
         outConfig.set("GriefPrevention.CreaturesTrampleCrops", this.config_creaturesTrampleCrops);
@@ -670,9 +578,6 @@ public class ConfigManager {
         outConfig.set("GriefPrevention.Database.URL", this.databaseUrl);
         outConfig.set("GriefPrevention.Database.UserName", this.databaseUserName);
         outConfig.set("GriefPrevention.Database.Password", this.databasePassword);
-
-        outConfig.set("GriefPrevention.UseBanCommand", this.config_ban_useCommand);
-        outConfig.set("GriefPrevention.BanCommandPattern", this.config_ban_commandFormat);
 
         outConfig.set("GriefPrevention.Advanced.fixNegativeClaimblockAmounts", this.config_advanced_fixNegativeClaimblockAmounts);
         outConfig.set("GriefPrevention.Advanced.ClaimExpirationCheckRate", this.config_advanced_claim_expiration_check_rate);
