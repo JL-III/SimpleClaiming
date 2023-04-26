@@ -330,7 +330,7 @@ public class ConfigManager {
         {
             // If MaximumDepth is untouched in an older configuration, correct it.
             this.config_claims_maxDepth = Integer.MIN_VALUE;
-            AddLogEntry("Updated default value for GriefPrevention.Claims.MaximumDepth to " + Integer.MIN_VALUE);
+            GriefPrevention.AddLogEntry("Updated default value for GriefPrevention.Claims.MaximumDepth to " + Integer.MIN_VALUE);
         }
         this.config_claims_chestClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.ChestClaimDays", 7);
         this.config_claims_unusedClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.UnusedClaimDays", 14);
@@ -456,7 +456,7 @@ public class ConfigManager {
             World world = griefPrevention.getServer().getWorld(worldName);
             if (world == null)
             {
-                AddLogEntry("Error: Siege Configuration: There's no world named \"" + worldName + "\".  Please update your config.yml.");
+                GriefPrevention.AddLogEntry("Error: Siege Configuration: There's no world named \"" + worldName + "\".  Please update your config.yml.");
             }
             else
             {
@@ -693,7 +693,7 @@ public class ConfigManager {
         }
         catch (IOException exception)
         {
-            AddLogEntry("Unable to write to the configuration file at \"" + DataStore.configFilePath + "\"");
+            GriefPrevention.AddLogEntry("Unable to write to the configuration file at \"" + DataStore.configFilePath + "\"");
         }
 
         //try to parse the list of commands requiring access trust in land claims
